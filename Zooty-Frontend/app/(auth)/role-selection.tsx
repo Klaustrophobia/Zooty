@@ -1,19 +1,12 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  SafeAreaView,
-  Dimensions,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Colors, Spacing, Radius } from '@/constants/theme';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Colors, Spacing, Radius, FontSize } from '@/constants/theme';
+import { wp, hp } from '@/constants/Responsive';
 import { UserRole } from '@/types';
 import LogoPlaceholder from '@/components/LogoPlaceholder';
 import PrimaryButton from '@/components/PrimaryButton';
-
-const { width } = Dimensions.get('window');
 
 interface RoleCardProps {
   icon: string;
@@ -24,6 +17,13 @@ interface RoleCardProps {
 }
 
 function RoleCard({ icon, title, description, selected, onPress }: RoleCardProps) {
+  const getIcon = () => {
+    if (icon === 'paw') {
+      return <MaterialCommunityIcons name="paw" size={wp(24)} color={selected ? Colors.white : Colors.primary} />;
+    }
+    return <Ionicons name="briefcase-outline" size={wp(24)} color={selected ? Colors.white : Colors.primary} />;
+  };
+
   return (
     <TouchableOpacity
       style={[styles.card, selected && styles.cardSelected]}
@@ -31,7 +31,7 @@ function RoleCard({ icon, title, description, selected, onPress }: RoleCardProps
       onPress={onPress}
     >
       <View style={[styles.iconCircle, selected && styles.iconCircleSelected]}>
-        <Text style={styles.iconEmoji}>{icon}</Text>
+        {getIcon()}
       </View>
       <View style={styles.cardText}>
         <Text style={[styles.cardTitle, selected && styles.cardTitleSelected]}>{title}</Text>
@@ -46,18 +46,13 @@ export default function RoleSelectionScreen() {
   const [role, setRole] = useState<UserRole>('owner');
 
   const handleContinue = () => {
-    if (role === 'owner') {
-      router.push('/onboarding/register-user');
-    } else {
-      router.push('/professional/register');
-    }
+    router.push(role === 'owner' ? '/onboarding/register-user' : '/(professional)/register');
   };
 
   return (
     <SafeAreaView style={styles.safe}>
       {/* Logo */}
       <View style={styles.header}>
-        {/* 👇 REEMPLAZA POR: <ZootyLogo width={56} height={56} /> */}
         <LogoPlaceholder size="md" />
       </View>
 
@@ -66,17 +61,17 @@ export default function RoleSelectionScreen() {
       {/* Tarjetas */}
       <View style={styles.cards}>
         <RoleCard
-          icon="🐾"
+          icon="paw"
           title="Dueño de Mascota"
           description="Busca servicios para el cuidado de tu mascota"
-          selected={role === 'owner'}
+          selected={role === 'owner'} 
           onPress={() => setRole('owner')}
         />
         <RoleCard
-          icon="💼"
+          icon="briefcase"
           title="Profesional"
           description="Ofrece tus servicios a dueños de mascotas"
-          selected={role === 'professional'}
+          selected={role === 'professional'} 
           onPress={() => setRole('professional')}
         />
       </View>
@@ -84,7 +79,7 @@ export default function RoleSelectionScreen() {
       {/* Imagen decorativa */}
       <View style={styles.dogWrapper}>
         <View style={styles.dogPlaceholder}>
-          <Text style={styles.dogEmoji}>🐕</Text>
+          <MaterialCommunityIcons name="dog" size={wp(44)} color={Colors.textLight} />
           <Text style={styles.dogNote}>Imagen decorativa</Text>
         </View>
       </View>
@@ -96,18 +91,13 @@ export default function RoleSelectionScreen() {
         ))}
       </View>
 
-      {/* CTA */}
-      <PrimaryButton
-        label="Continuar →"
-        onPress={handleContinue}
-        style={styles.cta}
-      />
+      <View style={styles.ctaWrapper}>
+        <PrimaryButton label="Continuar →" onPress={handleContinue} />
+      </View>
 
-      {/* Login link */}
-      <TouchableOpacity style={styles.loginRow} onPress={() => router.push('/')}>
+      <TouchableOpacity style={styles.loginRow} onPress={() => router.push('./login')}>
         <Text style={styles.loginText}>
-          ¿Ya tienes cuenta?{' '}
-          <Text style={styles.loginLink}>Inicia sesión</Text>
+          ¿Ya tienes cuenta? <Text style={styles.loginLink}>Inicia sesión</Text>
         </Text>
       </TouchableOpacity>
     </SafeAreaView>
@@ -121,23 +111,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: Spacing.lg,
   },
-  header: {
-    marginTop: Spacing.xl,
-    marginBottom: Spacing.sm,
-  },
+  header:  { marginTop: Spacing.xl, marginBottom: Spacing.sm },
   title: {
-    fontSize: 28,
+    fontSize: FontSize.xxxl,
     fontWeight: '700',
     color: Colors.textDark,
     textAlign: 'center',
     marginTop: Spacing.lg,
     marginBottom: Spacing.xl,
-    lineHeight: 36,
+    lineHeight: hp(36),
   },
-  cards: {
-    width: '100%',
-    gap: Spacing.md,
-  },
+  cards: { width: '100%', gap: Spacing.md },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -149,39 +133,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     shadowColor: '#000',
     shadowOpacity: 0.05,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: wp(8),
+    shadowOffset: { width: 0, height: hp(2) },
     elevation: 2,
     gap: Spacing.md,
   },
-  cardSelected: {
-    borderColor: Colors.primary,
-    backgroundColor: '#F0FAF8',
-  },
+  cardSelected:      { borderColor: Colors.primary, backgroundColor: '#F0FAF8' },
   iconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: wp(48), height: wp(48), borderRadius: wp(24),
     backgroundColor: Colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'center', justifyContent: 'center',
   },
-  iconCircleSelected: {
-    backgroundColor: Colors.primary,
-  },
-  iconEmoji: { fontSize: 22 },
-  cardText: { flex: 1 },
+  iconCircleSelected: { backgroundColor: Colors.primary },
+  cardText:           { flex: 1 },
   cardTitle: {
-    fontSize: 16,
+    fontSize: FontSize.md,
     fontWeight: '700',
     color: Colors.textDark,
-    marginBottom: 2,
+    marginBottom: hp(2),
   },
-  cardTitleSelected: { color: Colors.primary },
+  cardTitleSelected:  { color: Colors.primary },
   cardDesc: {
-    fontSize: 13,
+    fontSize: FontSize.xs,
     color: Colors.textMedium,
-    lineHeight: 18,
+    lineHeight: hp(18),
   },
   dogWrapper: {
     flex: 1,
@@ -191,25 +166,20 @@ const styles = StyleSheet.create({
   },
   dogPlaceholder: {
     width: '100%',
-    height: 130,
+    height: hp(130),
     borderRadius: Radius.lg,
     backgroundColor: '#E8F0EE',
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: Spacing.lg,
   },
-  dogEmoji: { fontSize: 44 },
-  dogNote: { color: Colors.textLight, fontSize: 11, marginTop: 4 },
-  dots: {
-    flexDirection: 'row',
-    gap: 6,
-    marginBottom: Spacing.md,
-  },
-  dot: { height: 8, borderRadius: 4 },
-  dotActive: { width: 24, backgroundColor: Colors.primary },
-  dotInactive: { width: 8, backgroundColor: Colors.stepPending },
-  cta: { marginBottom: Spacing.md },
-  loginRow: { marginBottom: Spacing.xl },
-  loginText: { fontSize: 13, color: Colors.textMedium },
+  dogNote:   { color: Colors.textLight, fontSize: FontSize.xs, marginTop: hp(4) },
+  dots:      { flexDirection: 'row', gap: wp(6), marginBottom: Spacing.md },
+  dot:       { height: hp(8), borderRadius: hp(4) },
+  dotActive: { width: wp(24), backgroundColor: Colors.primary },
+  dotInactive:{ width: wp(8), backgroundColor: Colors.stepPending },
+  ctaWrapper:{ width: '100%', marginBottom: Spacing.md },
+  loginRow:  { marginBottom: Spacing.xl },
+  loginText: { fontSize: FontSize.sm, color: Colors.textMedium },
   loginLink: { color: Colors.primary, fontWeight: '600' },
 });

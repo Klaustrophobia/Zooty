@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  SafeAreaView,
-  ScrollView,
+  View, Text, StyleSheet, TouchableOpacity,
+  SafeAreaView, ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Colors, Spacing, Radius } from '@/constants/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { Colors, Spacing, Radius, FontSize } from '@/constants/theme';
+import { wp, hp } from '@/constants/Responsive';
 import StepBar from '@/components/StepBar';
 import InputField from '@/components/InputField';
 import PrimaryButton from '@/components/PrimaryButton';
@@ -25,17 +23,11 @@ interface FormState {
 export default function RegisterUserScreen() {
   const router = useRouter();
   const [form, setForm] = useState<FormState>({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    acceptTerms: false,
+    name: '', email: '', password: '', confirmPassword: '', acceptTerms: false,
   });
 
-  const set =
-    <K extends keyof FormState>(key: K) =>
-    (value: FormState[K]) =>
-      setForm((prev) => ({ ...prev, [key]: value }));
+  const set = <K extends keyof FormState>(key: K) => (value: FormState[K]) =>
+    setForm((prev) => ({ ...prev, [key]: value }));
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -44,9 +36,7 @@ export default function RegisterUserScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* Header: logo + barra de pasos */}
         <View style={styles.topRow}>
-          {/* 👇 REEMPLAZA POR: <ZootyLogo width={40} height={40} /> */}
           <LogoPlaceholder size="sm" />
           <StepBar total={3} current={1} />
         </View>
@@ -55,59 +45,28 @@ export default function RegisterUserScreen() {
         <Text style={styles.title}>Crea tu cuenta</Text>
         <Text style={styles.subtitle}>Información Personal</Text>
 
-        {/* Campos */}
-        <InputField
-          label="Nombre completo"
-          placeholder="Ej. Juan Pérez"
-          value={form.name}
-          onChangeText={set('name')}
-        />
-        <InputField
-          label="Correo electrónico"
-          placeholder="tu@correo.com"
-          value={form.email}
-          onChangeText={set('email')}
-          keyboardType="email-address"
-        />
-        <InputField
-          label="Contraseña"
-          placeholder="••••••••"
-          value={form.password}
-          onChangeText={set('password')}
-          secureTextEntry
-        />
-        <InputField
-          label="Confirmar contraseña"
-          placeholder="••••••••"
-          value={form.confirmPassword}
-          onChangeText={set('confirmPassword')}
-          secureTextEntry
-        />
+        <InputField label="Nombre completo"     placeholder="Ej. Juan Pérez"  value={form.name}            onChangeText={set('name')} />
+        <InputField label="Correo electrónico"  placeholder="tu@correo.com"   value={form.email}           onChangeText={set('email')} keyboardType="email-address" />
+        <InputField label="Contraseña"          placeholder="••••••••"         value={form.password}        onChangeText={set('password')} secureTextEntry />
+        <InputField label="Confirmar contraseña" placeholder="••••••••"        value={form.confirmPassword} onChangeText={set('confirmPassword')} secureTextEntry />
 
-        {/* Términos y condiciones */}
         <TouchableOpacity
           style={styles.termsRow}
           onPress={() => set('acceptTerms')(!form.acceptTerms)}
           activeOpacity={0.7}
         >
           <View style={[styles.checkbox, form.acceptTerms && styles.checkboxChecked]}>
-            {form.acceptTerms && <Text style={styles.checkMark}>✓</Text>}
+            {form.acceptTerms && <Ionicons name="checkmark" size={wp(12)} color={Colors.white} />}
           </View>
           <Text style={styles.termsText}>
-            Acepto los{' '}
-            <Text style={styles.termsLink}>términos y condiciones</Text>
-            {' '}de uso de Zooty.
+            Acepto los <Text style={styles.termsLink}>términos y condiciones</Text> de uso de Zooty.
           </Text>
         </TouchableOpacity>
 
-        <PrimaryButton
-          label="Siguiente"
-          onPress={() => router.push('/onboarding/complete-profile')}
-        />
+        <PrimaryButton label="Siguiente" onPress={() => router.push('/onboarding/complete-profile')} />
 
-        {/* Botón atrás */}
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backIcon}>‹</Text>
+          <Ionicons name="chevron-back" size={wp(24)} color={Colors.primary} />
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -115,14 +74,8 @@ export default function RegisterUserScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: Colors.white,
-  },
-  scroll: {
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.xxl,
-  },
+  safe:   { flex: 1, backgroundColor: Colors.white },
+  scroll: { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xxl },
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -131,24 +84,15 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   stepLabel: {
-    fontSize: 11,
+    fontSize: FontSize.xs,
     fontWeight: '600',
     color: Colors.textLight,
     textAlign: 'center',
     letterSpacing: 1,
     marginBottom: Spacing.md,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: Colors.textDark,
-    marginBottom: Spacing.xs,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: Colors.textMedium,
-    marginBottom: Spacing.lg,
-  },
+  title:    { fontSize: FontSize.xxxl, fontWeight: '700', color: Colors.textDark, marginBottom: Spacing.xs },
+  subtitle: { fontSize: FontSize.sm, color: Colors.textMedium, marginBottom: Spacing.lg },
   termsRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -157,48 +101,22 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
+    width: wp(20), height: wp(20),
+    borderRadius: wp(4),
     borderWidth: 2,
     borderColor: Colors.inputBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 1,
+    alignItems: 'center', justifyContent: 'center',
+    marginTop: hp(1),
   },
-  checkboxChecked: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
-  },
-  checkMark: {
-    color: Colors.white,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  termsText: {
-    flex: 1,
-    fontSize: 13,
-    color: Colors.textMedium,
-    lineHeight: 20,
-  },
-  termsLink: {
-    color: Colors.primary,
-    fontWeight: '600',
-  },
+  checkboxChecked: { backgroundColor: Colors.primary, borderColor: Colors.primary },
+  termsText:       { flex: 1, fontSize: FontSize.sm, color: Colors.textMedium, lineHeight: hp(20) },
+  termsLink:       { color: Colors.primary, fontWeight: '600' },
   backBtn: {
     alignSelf: 'flex-start',
     marginTop: Spacing.xl,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: wp(40), height: wp(40),
+    borderRadius: wp(20),
     backgroundColor: Colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  backIcon: {
-    color: Colors.primary,
-    fontSize: 28,
-    fontWeight: '300',
-    lineHeight: 32,
+    alignItems: 'center', justifyContent: 'center',
   },
 });

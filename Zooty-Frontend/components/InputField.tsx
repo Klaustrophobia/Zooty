@@ -1,13 +1,10 @@
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  KeyboardTypeOptions,
+  View, Text, TextInput, TouchableOpacity,
+  StyleSheet, KeyboardTypeOptions,
 } from 'react-native';
-import { Colors, Radius, Spacing } from '../constants/theme';
+import { Colors, Radius, Spacing, FontSize } from '../constants/theme';
+import { hp, wp } from '../constants/Responsive';
 
 interface InputFieldProps {
   label: string;
@@ -38,9 +35,9 @@ export default function InputField({
     <View style={styles.wrapper}>
       <Text style={styles.label}>{label}</Text>
       <View style={[styles.container, multiline && styles.containerMultiline]}>
-        {prefixIcon ? (
-          <Text style={styles.prefixIcon}>{prefixIcon}</Text>
-        ) : null}
+        
+        {prefixIcon ? <Text style={styles.prefixIcon}>{prefixIcon}</Text> : null}
+
         <TextInput
           style={[styles.input, multiline && styles.inputMultiline]}
           placeholder={placeholder}
@@ -54,26 +51,33 @@ export default function InputField({
           numberOfLines={numberOfLines}
           textAlignVertical={multiline ? 'top' : 'center'}
         />
+
         {secureTextEntry && (
-          <TouchableOpacity onPress={() => setShowPass((v) => !v)} style={styles.eyeBtn}>
-            <Text style={styles.eyeIcon}>{showPass ? '🙈' : '👁️'}</Text>
+          <TouchableOpacity
+            onPress={() => setShowPass((v) => !v)}
+            style={styles.eyeBtn}
+          >
+            <Text style={styles.toggleText}>
+              {showPass ? 'Ocultar' : 'Mostrar'}
+            </Text>
           </TouchableOpacity>
         )}
+
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrapper: {
-    marginBottom: Spacing.md,
-  },
+  wrapper: { marginBottom: Spacing.md },
+
   label: {
-    fontSize: 13,
+    fontSize: FontSize.sm,
     fontWeight: '600',
     color: Colors.textDark,
-    marginBottom: 6,
+    marginBottom: hp(6),
   },
+
   container: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -82,29 +86,37 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: Colors.inputBorder,
     paddingHorizontal: Spacing.md,
-    height: 50,
+    height: hp(50),
     gap: Spacing.sm,
   },
+
   containerMultiline: {
-    height: 90,
+    height: hp(90),
     alignItems: 'flex-start',
     paddingVertical: Spacing.sm,
   },
+
   prefixIcon: {
-    fontSize: 16,
+    fontSize: wp(16),
   },
+
   input: {
     flex: 1,
-    fontSize: 15,
+    fontSize: FontSize.md,
     color: Colors.textDark,
   },
+
   inputMultiline: {
-    height: 70,
+    height: hp(70),
   },
+
   eyeBtn: {
-    padding: 4,
+    padding: wp(4),
   },
-  eyeIcon: {
-    fontSize: 16,
+
+  toggleText: {
+    fontSize: FontSize.xs,
+    color: Colors.primary,
+    fontWeight: '600',
   },
 });

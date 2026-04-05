@@ -1,14 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Colors, Radius } from '../constants/theme';
+import { Colors } from '../constants/theme';
+import { wp } from '../constants/Responsive';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // INSTRUCCIONES PARA INTEGRAR TU LOGO SVG
 // ─────────────────────────────────────────────────────────────────────────────
-// 1. Instala el soporte SVG para Expo:
+// 1. Instala soporte SVG para Expo:
 //      npx expo install react-native-svg
-//      npm install --save-dev @svgr/webpack  (si usas Metro con transformación)
-//      O bien: npx expo install react-native-svg-transformer
+//      npm install --save-dev react-native-svg-transformer
 //
 // 2. Crea/edita metro.config.js en la raíz:
 //      const { getDefaultConfig } = require('expo/metro-config');
@@ -18,7 +18,7 @@ import { Colors, Radius } from '../constants/theme';
 //      config.resolver.sourceExts = [...config.resolver.sourceExts, 'svg'];
 //      module.exports = config;
 //
-// 3. Crea/edita declarations.d.ts en la raíz:
+// 3. Crea declarations.d.ts en la raíz:
 //      declare module '*.svg' {
 //        import React from 'react';
 //        import { SvgProps } from 'react-native-svg';
@@ -26,13 +26,9 @@ import { Colors, Radius } from '../constants/theme';
 //        export default content;
 //      }
 //
-// 4. Importa y usa tu logo:
+// 4. Importa y reemplaza:
 //      import ZootyLogo from '@/assets/images/logo.svg';
-//
-// 5. Reemplaza <LogoPlaceholder size="lg" /> por:
-//      <ZootyLogo width={120} height={120} />   ← tamaño "lg"
-//      <ZootyLogo width={56}  height={56}  />   ← tamaño "md"
-//      <ZootyLogo width={40}  height={40}  />   ← tamaño "sm"
+//      <ZootyLogo width={sizeMap[size]} height={sizeMap[size]} />
 // ─────────────────────────────────────────────────────────────────────────────
 
 type LogoSize = 'sm' | 'md' | 'lg';
@@ -41,27 +37,26 @@ interface LogoPlaceholderProps {
   size?: LogoSize;
 }
 
-const sizeMap: Record<LogoSize, { container: number; font: number }> = {
-  sm: { container: 40, font: 16 },
-  md: { container: 56, font: 20 },
-  lg: { container: 120, font: 28 },
+// Tamaños en puntos de diseño base → wp() los escala
+const sizeMap: Record<LogoSize, number> = {
+  sm: wp(40),
+  md: wp(56),
+  lg: wp(120),
+};
+
+const fontMap: Record<LogoSize, number> = {
+  sm: wp(16),
+  md: wp(20),
+  lg: wp(32),
 };
 
 export default function LogoPlaceholder({ size = 'md' }: LogoPlaceholderProps) {
-  const { container, font } = sizeMap[size];
+  const dim  = sizeMap[size];
+  const font = fontMap[size];
 
   return (
-    <View
-      style={[
-        styles.container,
-        {
-          width: container,
-          height: container,
-          borderRadius: container / 2,
-        },
-      ]}
-    >
-      {/* 👇 REEMPLAZA ESTE VIEW POR TU COMPONENTE SVG */}
+    <View style={[styles.container, { width: dim, height: dim, borderRadius: dim / 2 }]}>
+      {/* 👇 REEMPLAZA POR: <ZootyLogo width={dim} height={dim} /> */}
       <Text style={[styles.letter, { fontSize: font }]}>Z</Text>
     </View>
   );
@@ -74,8 +69,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     shadowColor: '#000',
     shadowOpacity: 0.08,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: wp(10),
+    shadowOffset: { width: 0, height: wp(3) },
     elevation: 3,
   },
   letter: {

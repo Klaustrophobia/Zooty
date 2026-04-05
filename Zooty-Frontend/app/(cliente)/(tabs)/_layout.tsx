@@ -1,8 +1,9 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import {
-  View, Text, StyleSheet, TouchableOpacity, Platform,
+  View, Text, StyleSheet, Platform,
 } from 'react-native';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors, FontSize } from '@/constants/theme';
 import { wp, hp } from '@/constants/Responsive';
 
@@ -12,19 +13,31 @@ type TabIconProps = {
 };
 
 function TabIcon({ name, focused }: TabIconProps) {
-  const icons: Record<string, string> = {
-    home:     '🏠',
-    search:   '🔍',
-    calendar: '📅',
-    paw:      '🐾',
-    person:   '👤',
+  const getIcon = () => {
+    const props = {
+      size: wp(22),
+      color: focused ? Colors.primary : Colors.textLight,
+    };
+
+    switch (name) {
+      case 'home':
+        return <Ionicons name={focused ? 'home' : 'home-outline'} {...props} />;
+      case 'search':
+        return <Ionicons name={focused ? 'search' : 'search-outline'} {...props} />;
+      case 'calendar':
+        return <Ionicons name={focused ? 'calendar' : 'calendar-outline'} {...props} />;
+      case 'paw':
+        return <MaterialCommunityIcons name={focused ? 'paw' : 'paw-outline'} {...props} />;
+      case 'person':
+        return <Ionicons name={focused ? 'person' : 'person-outline'} {...props} />;
+      default:
+        return null;
+    }
   };
 
   return (
-    <View style={[styles.iconWrapper, focused && styles.iconWrapperActive]}>
-      <Text style={[styles.iconEmoji, { opacity: focused ? 1 : 0.45 }]}>
-        {icons[name]}
-      </Text>
+    <View style={styles.iconWrapper}>
+      {getIcon()}
     </View>
   );
 }
@@ -41,19 +54,21 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerShown: false, // ← Esto oculta el header del Tabs
+        headerShown: false,
         tabBarStyle: styles.tabBar,
         tabBarActiveTintColor: Colors.primary,
         tabBarInactiveTintColor: Colors.textLight,
         tabBarShowLabel: true,
         tabBarLabelStyle: styles.tabLabelBase,
+
+        // 🔥 Esto elimina efectos tipo "flecha" o resaltado extraño
+        tabBarItemStyle: styles.tabItem,
       }}
     >
       <Tabs.Screen
         name="home"
         options={{
           title: 'Inicio',
-          headerShown: false, // ← Forzar ocultar header individualmente
           tabBarIcon: ({ focused }) => <TabIcon name="home" focused={focused} />,
           tabBarLabel: ({ focused }) => <TabLabel label="Inicio" focused={focused} />,
         }}
@@ -62,7 +77,6 @@ export default function TabLayout() {
         name="buscar"
         options={{
           title: 'Buscar',
-          headerShown: false,
           tabBarIcon: ({ focused }) => <TabIcon name="search" focused={focused} />,
           tabBarLabel: ({ focused }) => <TabLabel label="Buscar" focused={focused} />,
         }}
@@ -71,7 +85,6 @@ export default function TabLayout() {
         name="citas"
         options={{
           title: 'Citas',
-          headerShown: false,
           tabBarIcon: ({ focused }) => <TabIcon name="calendar" focused={focused} />,
           tabBarLabel: ({ focused }) => <TabLabel label="Citas" focused={focused} />,
         }}
@@ -80,7 +93,6 @@ export default function TabLayout() {
         name="mascotas"
         options={{
           title: 'Mascotas',
-          headerShown: false,
           tabBarIcon: ({ focused }) => <TabIcon name="paw" focused={focused} />,
           tabBarLabel: ({ focused }) => <TabLabel label="Mascotas" focused={focused} />,
         }}
@@ -89,7 +101,6 @@ export default function TabLayout() {
         name="perfil"
         options={{
           title: 'Perfil',
-          headerShown: false,
           tabBarIcon: ({ focused }) => <TabIcon name="person" focused={focused} />,
           tabBarLabel: ({ focused }) => <TabLabel label="Perfil" focused={focused} />,
         }}
@@ -112,6 +123,12 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: -hp(2) },
     elevation: 10,
   },
+
+  // 🔥 IMPORTANTE: limpia cualquier indicador raro
+  tabItem: {
+    borderTopWidth: 0,
+  },
+
   iconWrapper: {
     width: wp(40),
     height: wp(40),
@@ -119,22 +136,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  iconWrapperActive: {
-    backgroundColor: Colors.primaryLight,
-  },
-  iconEmoji: {
-    fontSize: wp(20),
-  },
+
   tabLabelBase: {
     fontSize: FontSize.xs,
     fontWeight: '500',
   },
+
   tabLabel: {
     fontSize: wp(10),
     color: Colors.textLight,
     fontWeight: '500',
     marginTop: -hp(2),
   },
+
   tabLabelActive: {
     color: Colors.primary,
     fontWeight: '700',

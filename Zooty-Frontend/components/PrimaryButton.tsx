@@ -1,14 +1,7 @@
 import React from 'react';
-import {
-  TouchableOpacity,
-  Text,
-  StyleSheet,
-  ViewStyle,
-  Dimensions,
-} from 'react-native';
-import { Colors, Radius } from '../constants/theme';
-
-const { width } = Dimensions.get('window');
+import { TouchableOpacity, Text, StyleSheet, ViewStyle } from 'react-native';
+import { Colors, Radius, FontSize } from '../constants/theme';
+import { hp } from '../constants/Responsive';
 
 interface PrimaryButtonProps {
   label: string;
@@ -31,20 +24,20 @@ export default function PrimaryButton({ label, onPress, style }: PrimaryButtonPr
 const styles = StyleSheet.create({
   button: {
     width: '100%',
-    height: 54,
+    height: hp(54),
     backgroundColor: Colors.primary,
     borderRadius: Radius.full,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: Colors.primary,
     shadowOpacity: 0.32,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: hp(10),
+    shadowOffset: { width: 0, height: hp(4) },
     elevation: 5,
   },
   label: {
     color: Colors.white,
-    fontSize: 17,
+    fontSize: FontSize.lg,
     fontWeight: '600',
   },
 });
