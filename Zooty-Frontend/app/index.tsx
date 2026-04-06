@@ -1,27 +1,16 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  SafeAreaView,
-  Dimensions,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Colors, Spacing, Radius } from '@/constants/theme';
+import { Colors, Spacing, Radius, FontSize } from '@/constants/theme';
+import { wp, hp } from '@/constants/Responsive';
 import LogoPlaceholder from '@/components/LogoPlaceholder';
 import PrimaryButton from '@/components/PrimaryButton';
-
-const { width } = Dimensions.get('window');
 
 function OnboardingDots({ total = 3, active = 0 }: { total?: number; active?: number }) {
   return (
     <View style={styles.dotsRow}>
       {Array.from({ length: total }).map((_, i) => (
-        <View
-          key={i}
-          style={[styles.dot, i === active ? styles.dotActive : styles.dotInactive]}
-        />
+        <View key={i} style={[styles.dot, i === active ? styles.dotActive : styles.dotInactive]} />
       ))}
     </View>
   );
@@ -33,19 +22,16 @@ export default function OnboardingScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       {/* Saltar */}
-      <TouchableOpacity
-        style={styles.skipBtn}
-        onPress={() => router.push('/role-selection')}
-      >
+      <TouchableOpacity style={styles.skipBtn} onPress={() => router.push('/role-selection')}>
         <Text style={styles.skipText}>Saltar</Text>
       </TouchableOpacity>
 
-      {/* Círculo decorativo de fondo */}
+      {/* Círculo decorativo */}
       <View style={styles.bgCircle} />
 
       {/* Logo */}
       <View style={styles.logoWrapper}>
-        {/* 👇 REEMPLAZA POR: <ZootyLogo width={120} height={120} /> */}
+        {/* 👇 REEMPLAZA POR: <ZootyLogo width={wp(120)} height={wp(120)} /> */}
         <LogoPlaceholder size="lg" />
       </View>
 
@@ -63,11 +49,9 @@ export default function OnboardingScreen() {
       <OnboardingDots total={3} active={0} />
 
       {/* CTA */}
-      <PrimaryButton
-        label="Continuar"
-        onPress={() => router.push('/role-selection')}
-        style={styles.cta}
-      />
+      <View style={styles.ctaWrapper}>
+        <PrimaryButton label="Continuar" onPress={() => router.push('/role-selection')} />
+      </View>
     </SafeAreaView>
   );
 }
@@ -87,21 +71,21 @@ const styles = StyleSheet.create({
   },
   skipText: {
     color: Colors.primary,
-    fontSize: 15,
+    fontSize: FontSize.md,
     fontWeight: '500',
   },
   bgCircle: {
     position: 'absolute',
-    top: -60,
-    width: width * 1.1,
-    height: width * 1.1,
-    borderRadius: width * 0.55,
+    top: hp(-60),
+    width: '110%',
+    aspectRatio: 1,
+    borderRadius: 9999,
     backgroundColor: '#D6F0EC',
     opacity: 0.45,
     zIndex: 0,
   },
   logoWrapper: {
-    marginTop: Spacing.xl * 1.8,
+    marginTop: '18%',
     zIndex: 1,
   },
   copy: {
@@ -112,42 +96,42 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xl,
   },
   headline: {
-    fontSize: 26,
+    fontSize: FontSize.xxl,
     fontWeight: '700',
     color: Colors.textDark,
     textAlign: 'center',
-    lineHeight: 34,
+    lineHeight: hp(34),
     marginBottom: Spacing.md,
   },
   subheadline: {
-    fontSize: 14,
+    fontSize: FontSize.sm,
     color: Colors.textMedium,
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: hp(22),
   },
   dotsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: Spacing.xl,
-    gap: 6,
+    gap: wp(6),
   },
   dot: {
-    height: 8,
-    borderRadius: 4,
+    height: hp(8),
+    borderRadius: hp(4),
   },
   dotActive: {
-    width: 24,
+    width: wp(24),
     backgroundColor: Colors.primary,
   },
   dotInactive: {
-    width: 8,
+    width: wp(8),
     backgroundColor: Colors.primaryLight,
     borderWidth: 1,
     borderColor: Colors.primary,
     opacity: 0.5,
   },
-  cta: {
-    width: width - Spacing.lg * 2,
+  ctaWrapper: {
+    width: '88%',
     marginBottom: Spacing.xl,
   },
 });

@@ -1,10 +1,11 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Colors, Spacing } from '../constants/theme';
+import { hp } from '../constants/Responsive';
 
 interface StepBarProps {
   total?: number;
-  current: number; // cuántos pasos completados (1-based: current=1 → primer segmento relleno)
+  current: number;
 }
 
 export default function StepBar({ total = 3, current }: StepBarProps) {
@@ -16,7 +17,7 @@ export default function StepBar({ total = 3, current }: StepBarProps) {
           style={[
             styles.segment,
             i < current ? styles.done : styles.pending,
-            i < total - 1 && { marginRight: 4 },
+            i < total - 1 && { marginRight: Spacing.xs },
           ]}
         />
       ))}
@@ -31,13 +32,9 @@ const styles = StyleSheet.create({
   },
   segment: {
     flex: 1,
-    height: 4,
-    borderRadius: 2,
+    height: hp(4),
+    borderRadius: hp(2),
   },
-  done: {
-    backgroundColor: Colors.stepDone,
-  },
-  pending: {
-    backgroundColor: Colors.stepPending,
-  },
+  done:    { backgroundColor: Colors.stepDone },
+  pending: { backgroundColor: Colors.stepPending },
 });

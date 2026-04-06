@@ -9,7 +9,17 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Zooty necesita tu ubicación para mostrarte profesionales cercanos a tu área.",
+        "NSLocationAlwaysUsageDescription": "Zooty necesita tu ubicación para mostrarte profesionales cercanos.",
+        "UIBackgroundModes": ["location"],
+        "NSPhotoLibraryUsageDescription": "Zooty necesita acceder a tu galería para seleccionar una foto de perfil.",
+        "NSCameraUsageDescription": "Zooty necesita acceder a tu cámara para tomar una foto de perfil."
+      },
+      "config": {
+        "googleMapsApiKey": "TU_API_KEY_DE_IOS_AQUI"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +29,19 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.RECORD_AUDIO"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "TU_API_KEY_DE_ANDROID_AQUI"
+        }
+      }
     },
     "web": {
       "output": "static",
@@ -37,6 +59,19 @@
           "dark": {
             "backgroundColor": "#000000"
           }
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Permite a Zooty acceder a tu ubicación para mostrarte profesionales cercanos."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Zooty necesita acceder a tu galería para seleccionar una foto de perfil.",
+          "cameraPermission": "Zooty necesita acceder a tu cámara para tomar una foto de perfil."
         }
       ]
     ],

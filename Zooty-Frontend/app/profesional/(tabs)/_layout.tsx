@@ -1,30 +1,43 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import {
-  View, Text, StyleSheet, TouchableOpacity, Platform,
+  View, Text, StyleSheet, Platform,
 } from 'react-native';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors, FontSize } from '@/constants/theme';
 import { wp, hp } from '@/constants/Responsive';
 
 type TabIconProps = {
-  name: 'home' | 'search' | 'calendar' | 'paw' | 'person';
+  name: 'home' | 'calendar' | 'people' | 'finance' | 'person';
   focused: boolean;
 };
 
 function TabIcon({ name, focused }: TabIconProps) {
-  const icons: Record<string, string> = {
-    home:     '🏠',
-    search:   '🔍',
-    calendar: '📅',
-    paw:      '🐾',
-    person:   '👤',
+  const getIcon = () => {
+    const props = {
+      size: wp(22),
+      color: focused ? Colors.primary : Colors.textLight,
+    };
+
+    switch (name) {
+      case 'home':
+        return <Ionicons name={focused ? 'home' : 'home-outline'} {...props} />;
+      case 'calendar':
+        return <Ionicons name={focused ? 'calendar' : 'calendar-outline'} {...props} />;
+      case 'people':
+        return <Ionicons name={focused ? 'people' : 'people-outline'} {...props} />;
+      case 'finance':
+        return <MaterialCommunityIcons name={focused ? 'cash' : 'cash-multiple'} {...props} />;
+      case 'person':
+        return <Ionicons name={focused ? 'person' : 'person-outline'} {...props} />;
+      default:
+        return null;
+    }
   };
 
   return (
-    <View style={[styles.iconWrapper, focused && styles.iconWrapperActive]}>
-      <Text style={[styles.iconEmoji, { opacity: focused ? 1 : 0.45 }]}>
-        {icons[name]}
-      </Text>
+    <View style={styles.iconWrapper}>
+      {getIcon()}
     </View>
   );
 }
@@ -37,59 +50,55 @@ function TabLabel({ label, focused }: { label: string; focused: boolean }) {
   );
 }
 
-export default function TabLayout() {
+export default function ProTabLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerShown: false, // ← Esto oculta el header del Tabs
+        headerShown: false,
         tabBarStyle: styles.tabBar,
         tabBarActiveTintColor: Colors.primary,
         tabBarInactiveTintColor: Colors.textLight,
         tabBarShowLabel: true,
         tabBarLabelStyle: styles.tabLabelBase,
+        tabBarItemStyle: styles.tabItem,
       }}
     >
       <Tabs.Screen
-        name="home"
+        name="inicio"
         options={{
           title: 'Inicio',
-          headerShown: false, // ← Forzar ocultar header individualmente
           tabBarIcon: ({ focused }) => <TabIcon name="home" focused={focused} />,
           tabBarLabel: ({ focused }) => <TabLabel label="Inicio" focused={focused} />,
         }}
       />
       <Tabs.Screen
-        name="buscar"
+        name="calendario"
         options={{
-          title: 'Buscar',
-          headerShown: false,
-          tabBarIcon: ({ focused }) => <TabIcon name="search" focused={focused} />,
-          tabBarLabel: ({ focused }) => <TabLabel label="Buscar" focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="citas"
-        options={{
-          title: 'Citas',
-          headerShown: false,
+          title: 'Calendario',
           tabBarIcon: ({ focused }) => <TabIcon name="calendar" focused={focused} />,
-          tabBarLabel: ({ focused }) => <TabLabel label="Citas" focused={focused} />,
+          tabBarLabel: ({ focused }) => <TabLabel label="Calendario" focused={focused} />,
         }}
       />
       <Tabs.Screen
-        name="mascotas"
+        name="clientes"
         options={{
-          title: 'Mascotas',
-          headerShown: false,
-          tabBarIcon: ({ focused }) => <TabIcon name="paw" focused={focused} />,
-          tabBarLabel: ({ focused }) => <TabLabel label="Mascotas" focused={focused} />,
+          title: 'Clientes',
+          tabBarIcon: ({ focused }) => <TabIcon name="people" focused={focused} />,
+          tabBarLabel: ({ focused }) => <TabLabel label="Clientes" focused={focused} />,
+        }}
+      />
+      <Tabs.Screen
+        name="finanzas"
+        options={{
+          title: 'Finanzas',
+          tabBarIcon: ({ focused }) => <TabIcon name="finance" focused={focused} />,
+          tabBarLabel: ({ focused }) => <TabLabel label="Finanzas" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="perfil"
         options={{
           title: 'Perfil',
-          headerShown: false,
           tabBarIcon: ({ focused }) => <TabIcon name="person" focused={focused} />,
           tabBarLabel: ({ focused }) => <TabLabel label="Perfil" focused={focused} />,
         }}
@@ -112,6 +121,11 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: -hp(2) },
     elevation: 10,
   },
+
+  tabItem: {
+    borderTopWidth: 0,
+  },
+
   iconWrapper: {
     width: wp(40),
     height: wp(40),
@@ -119,22 +133,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  iconWrapperActive: {
-    backgroundColor: Colors.primaryLight,
-  },
-  iconEmoji: {
-    fontSize: wp(20),
-  },
+
   tabLabelBase: {
     fontSize: FontSize.xs,
     fontWeight: '500',
   },
+
   tabLabel: {
     fontSize: wp(10),
     color: Colors.textLight,
     fontWeight: '500',
     marginTop: -hp(2),
   },
+
   tabLabelActive: {
     color: Colors.primary,
     fontWeight: '700',

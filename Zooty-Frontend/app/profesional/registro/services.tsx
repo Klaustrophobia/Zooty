@@ -1,24 +1,18 @@
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  TouchableOpacity,
-  SafeAreaView,
-  ScrollView,
-  Switch,
+  View, Text, TextInput, StyleSheet, TouchableOpacity,
+  SafeAreaView, ScrollView, Switch,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Colors, Spacing, Radius } from '@/constants/theme';
+import { Colors, Spacing, Radius, FontSize } from '@/constants/theme';
+import { wp, hp } from '@/constants/Responsive';
 import { Service, WeekSchedule } from '@/types';
 import StepBar from '@/components/StepBar';
 import PrimaryButton from '@/components/PrimaryButton';
 
-// ─── Constantes ───────────────────────────────────────────
 const DURATION_OPTIONS = ['30 min', '1 hora', '1.5 horas', '2 horas', '3 horas'];
 
-const DAYS: { key: string; label: string }[] = [
+const DAYS = [
   { key: 'L', label: 'Lunes' },
   { key: 'M', label: 'Martes' },
   { key: 'X', label: 'Miércoles' },
@@ -38,32 +32,22 @@ const INITIAL_SCHEDULE: WeekSchedule = {
   D: { enabled: false, from: '10:00', to: '14:00' },
 };
 
-// ─── Sub-componentes ──────────────────────────────────────
-interface DurationPickerProps {
-  value: string;
-  onChange: (v: string) => void;
-}
-
-function DurationPicker({ value, onChange }: DurationPickerProps) {
+function DurationPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const [open, setOpen] = useState(false);
-
   return (
     <View>
       <TouchableOpacity
         style={styles.durationSelector}
-        onPress={() => setOpen((v) => !v)}
-        activeOpacity={0.8}
+        onPress={() => setOpen((v) => !v)} activeOpacity={0.8}
       >
         <Text style={styles.durationValue}>{value}</Text>
         <Text style={styles.chevron}>⌄</Text>
       </TouchableOpacity>
-
       {open && (
         <View style={styles.durationDropdown}>
           {DURATION_OPTIONS.map((opt) => (
             <TouchableOpacity
-              key={opt}
-              style={styles.durationOption}
+              key={opt} style={styles.durationOption}
               onPress={() => { onChange(opt); setOpen(false); }}
             >
               <Text style={[styles.durationOptionText, value === opt && styles.durationSelected]}>
@@ -77,16 +61,13 @@ function DurationPicker({ value, onChange }: DurationPickerProps) {
   );
 }
 
-// ─── Pantalla principal ───────────────────────────────────
 export default function ProfessionalServicesScreen() {
   const router = useRouter();
-
   const [services, setServices] = useState<Service[]>([
     { id: 1, name: '', duration: '1 hora', price: '' },
   ]);
   const [schedule, setSchedule] = useState<WeekSchedule>(INITIAL_SCHEDULE);
 
-  // Servicios
   const addService = () =>
     setServices((prev) => [...prev, { id: Date.now(), name: '', duration: '1 hora', price: '' }]);
 
@@ -96,15 +77,8 @@ export default function ProfessionalServicesScreen() {
   const removeService = (id: number) =>
     setServices((prev) => prev.filter((s) => s.id !== id));
 
-  // Horarios
   const toggleDay = (key: string) =>
-    setSchedule((prev) => ({
-      ...prev,
-      [key]: { ...prev[key], enabled: !prev[key].enabled },
-    }));
-
-  // Solo mostrar días habilitados + L y V (como en el mockup)
-  const visibleDays = DAYS.filter(({ key }) => schedule[key].enabled);
+    setSchedule((prev) => ({ ...prev, [key]: { ...prev[key], enabled: !prev[key].enabled } }));
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -113,7 +87,6 @@ export default function ProfessionalServicesScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* Top bar */}
         <View style={styles.topRow}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <Text style={styles.backIcon}>‹</Text>
@@ -127,7 +100,7 @@ export default function ProfessionalServicesScreen() {
           Define los servicios que ofreces a las mascotas y tus horarios de disponibilidad.
         </Text>
 
-        {/* ── Sección Servicios ── */}
+        {/* Servicios */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionIcon}>🐾</Text>
           <Text style={styles.sectionTitle}>Servicios</Text>
@@ -140,7 +113,6 @@ export default function ProfessionalServicesScreen() {
                 <Text style={styles.removeBadgeText}>✕</Text>
               </TouchableOpacity>
             )}
-
             <Text style={styles.smallLabel}>NOMBRE DEL SERVICIO</Text>
             <View style={styles.inputBox}>
               <TextInput
@@ -151,7 +123,6 @@ export default function ProfessionalServicesScreen() {
                 onChangeText={(v) => updateService(service.id, 'name', v)}
               />
             </View>
-
             <View style={styles.rowFields}>
               <View style={styles.halfField}>
                 <Text style={styles.smallLabel}>DURACIÓN</Text>
@@ -166,8 +137,7 @@ export default function ProfessionalServicesScreen() {
                   <Text style={styles.currency}>$</Text>
                   <TextInput
                     style={styles.input}
-                    placeholder="0.00"
-                    placeholderTextColor={Colors.placeholder}
+                    placeholder="0.00" placeholderTextColor={Colors.placeholder}
                     value={service.price}
                     onChangeText={(v) => updateService(service.id, 'price', v)}
                     keyboardType="decimal-pad"
@@ -182,7 +152,7 @@ export default function ProfessionalServicesScreen() {
           <Text style={styles.addServiceText}>⊕ Añadir otro servicio</Text>
         </TouchableOpacity>
 
-        {/* ── Sección Horarios ── */}
+        {/* Horarios */}
         <View style={[styles.sectionHeader, { marginTop: Spacing.xl }]}>
           <Text style={styles.sectionIcon}>🕐</Text>
           <Text style={styles.sectionTitle}>Horarios de atención</Text>
@@ -197,16 +167,12 @@ export default function ProfessionalServicesScreen() {
               </View>
               <View style={styles.dayInfo}>
                 <Text style={styles.dayLabel}>{label}</Text>
-                {day.enabled && (
-                  <Text style={styles.dayHours}>{day.from}    {day.to}</Text>
-                )}
+                {day.enabled && <Text style={styles.dayHours}>{day.from}    {day.to}</Text>}
               </View>
               <Switch
-                value={day.enabled}
-                onValueChange={() => toggleDay(key)}
+                value={day.enabled} onValueChange={() => toggleDay(key)}
                 trackColor={{ false: Colors.stepPending, true: Colors.primary }}
-                thumbColor={Colors.white}
-                ios_backgroundColor={Colors.stepPending}
+                thumbColor={Colors.white} ios_backgroundColor={Colors.stepPending}
               />
             </View>
           );
@@ -216,122 +182,103 @@ export default function ProfessionalServicesScreen() {
           PUEDES EDITAR HORARIOS ESPECÍFICOS POR DÍA MÁS TARDE
         </Text>
 
-        <PrimaryButton
-          label="Finalizar registro →"
-          onPress={() => router.push('/')}
-        />
+        <PrimaryButton label="Finalizar registro →" onPress={() => router.push('/')} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-// ─── Estilos ──────────────────────────────────────────────
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.white },
+  safe:   { flex: 1, backgroundColor: Colors.white },
   scroll: { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xxl },
   topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: Spacing.lg,
-    marginBottom: Spacing.xs,
-    gap: Spacing.md,
+    flexDirection: 'row', alignItems: 'center',
+    marginTop: Spacing.lg, marginBottom: Spacing.xs, gap: Spacing.md,
   },
   backBtn: {
-    width: 36, height: 36, borderRadius: 18,
+    width: wp(36), height: wp(36), borderRadius: wp(18),
     backgroundColor: Colors.primaryLight,
     alignItems: 'center', justifyContent: 'center',
   },
-  backIcon: { color: Colors.primary, fontSize: 26, fontWeight: '300', lineHeight: 30 },
+  backIcon:  { color: Colors.primary, fontSize: wp(26), fontWeight: '300', lineHeight: hp(30) },
   stepLabel: {
-    fontSize: 11, fontWeight: '600', color: Colors.textLight,
+    fontSize: FontSize.xs, fontWeight: '600', color: Colors.textLight,
     textAlign: 'center', letterSpacing: 1, marginBottom: Spacing.md,
   },
-  title: { fontSize: 28, fontWeight: '700', color: Colors.textDark, lineHeight: 36, marginBottom: Spacing.xs },
-  subtitle: { fontSize: 14, color: Colors.textMedium, lineHeight: 21, marginBottom: Spacing.lg },
+  title:    { fontSize: FontSize.xxxl, fontWeight: '700', color: Colors.textDark, lineHeight: hp(36), marginBottom: Spacing.xs },
+  subtitle: { fontSize: FontSize.sm, color: Colors.textMedium, lineHeight: hp(21), marginBottom: Spacing.lg },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.md },
-  sectionIcon: { fontSize: 18 },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: Colors.textDark },
+  sectionIcon:   { fontSize: wp(18) },
+  sectionTitle:  { fontSize: FontSize.md, fontWeight: '700', color: Colors.textDark },
   serviceCard: {
-    backgroundColor: Colors.white,
-    borderRadius: Radius.lg,
-    borderWidth: 1.5,
-    borderColor: Colors.borderLight,
-    padding: Spacing.md,
-    marginBottom: Spacing.md,
-    position: 'relative',
+    backgroundColor: Colors.white, borderRadius: Radius.lg,
+    borderWidth: 1.5, borderColor: Colors.borderLight,
+    padding: Spacing.md, marginBottom: Spacing.md, position: 'relative',
   },
   removeBadge: {
     position: 'absolute', top: Spacing.sm, right: Spacing.sm,
-    width: 24, height: 24, borderRadius: 12,
+    width: wp(24), height: wp(24), borderRadius: wp(12),
     backgroundColor: '#FFE5E5',
     alignItems: 'center', justifyContent: 'center', zIndex: 1,
   },
-  removeBadgeText: { color: Colors.error, fontSize: 12, fontWeight: '700' },
+  removeBadgeText: { color: Colors.error, fontSize: wp(12), fontWeight: '700' },
   smallLabel: {
-    fontSize: 10, fontWeight: '700', color: Colors.textLight,
-    letterSpacing: 0.8, marginBottom: 6,
+    fontSize: FontSize.xs, fontWeight: '700', color: Colors.textLight,
+    letterSpacing: 0.8, marginBottom: hp(6),
   },
   inputBox: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: Colors.white,
-    borderRadius: Radius.md, borderWidth: 1.5,
-    borderColor: Colors.borderLight,
-    paddingHorizontal: Spacing.md, height: 46,
-    marginBottom: Spacing.sm,
+    backgroundColor: Colors.white, borderRadius: Radius.md,
+    borderWidth: 1.5, borderColor: Colors.borderLight,
+    paddingHorizontal: Spacing.md, height: hp(46), marginBottom: Spacing.sm,
   },
-  currency: { color: Colors.textMedium, fontSize: 15, marginRight: 4 },
-  input: { flex: 1, fontSize: 15, color: Colors.textDark },
-  rowFields: { flexDirection: 'row', gap: Spacing.sm },
-  halfField: { flex: 1 },
+  currency:   { color: Colors.textMedium, fontSize: FontSize.md, marginRight: wp(4) },
+  input:      { flex: 1, fontSize: FontSize.md, color: Colors.textDark },
+  rowFields:  { flexDirection: 'row', gap: Spacing.sm },
+  halfField:  { flex: 1 },
   durationSelector: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: Colors.white,
-    borderRadius: Radius.md, borderWidth: 1.5,
-    borderColor: Colors.borderLight,
-    paddingHorizontal: Spacing.md, height: 46,
+    backgroundColor: Colors.white, borderRadius: Radius.md,
+    borderWidth: 1.5, borderColor: Colors.borderLight,
+    paddingHorizontal: Spacing.md, height: hp(46),
   },
-  durationValue: { fontSize: 14, color: Colors.textDark },
-  chevron: { color: Colors.primary, fontSize: 18 },
+  durationValue:   { fontSize: FontSize.sm, color: Colors.textDark },
+  chevron:         { color: Colors.primary, fontSize: wp(18) },
   durationDropdown: {
-    position: 'absolute', top: 48, left: 0, right: 0, zIndex: 999,
-    backgroundColor: Colors.white,
-    borderRadius: Radius.md, borderWidth: 1.5,
-    borderColor: Colors.borderLight,
+    position: 'absolute', top: hp(48), left: 0, right: 0, zIndex: 999,
+    backgroundColor: Colors.white, borderRadius: Radius.md,
+    borderWidth: 1.5, borderColor: Colors.borderLight,
     shadowColor: '#000', shadowOpacity: 0.08,
-    shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 10,
+    shadowRadius: wp(8), shadowOffset: { width: 0, height: hp(2) }, elevation: 10,
   },
   durationOption: {
-    paddingVertical: 10, paddingHorizontal: Spacing.md,
+    paddingVertical: hp(10), paddingHorizontal: Spacing.md,
     borderBottomWidth: 1, borderBottomColor: '#F0F7F6',
   },
-  durationOptionText: { fontSize: 14, color: Colors.textDark },
-  durationSelected: { color: Colors.primary, fontWeight: '700' },
+  durationOptionText: { fontSize: FontSize.sm, color: Colors.textDark },
+  durationSelected:   { color: Colors.primary, fontWeight: '700' },
   addServiceBtn: {
     alignItems: 'center', paddingVertical: Spacing.md,
     borderWidth: 1.5, borderColor: Colors.tagBorder,
-    borderStyle: 'dashed', borderRadius: Radius.lg,
-    marginBottom: Spacing.md,
+    borderStyle: 'dashed', borderRadius: Radius.lg, marginBottom: Spacing.md,
   },
-  addServiceText: { color: Colors.primary, fontSize: 15, fontWeight: '600' },
+  addServiceText: { color: Colors.primary, fontSize: FontSize.md, fontWeight: '600' },
   scheduleRow: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 1, borderBottomColor: '#F0F7F6',
-    gap: Spacing.md,
+    flexDirection: 'row', alignItems: 'center', paddingVertical: hp(10),
+    borderBottomWidth: 1, borderBottomColor: '#F0F7F6', gap: Spacing.md,
   },
   dayBadge: {
-    width: 32, height: 32, borderRadius: 8,
-    backgroundColor: '#F0F7F6',
-    alignItems: 'center', justifyContent: 'center',
+    width: wp(32), height: wp(32), borderRadius: wp(8),
+    backgroundColor: '#F0F7F6', alignItems: 'center', justifyContent: 'center',
   },
   dayBadgeOn: { backgroundColor: Colors.primaryLight },
-  dayKey: { fontSize: 13, fontWeight: '700', color: Colors.textLight },
-  dayKeyOn: { color: Colors.primary },
-  dayInfo: { flex: 1 },
-  dayLabel: { fontSize: 14, fontWeight: '600', color: Colors.textDark },
-  dayHours: { fontSize: 12, color: Colors.textMedium, marginTop: 2 },
+  dayKey:     { fontSize: FontSize.sm, fontWeight: '700', color: Colors.textLight },
+  dayKeyOn:   { color: Colors.primary },
+  dayInfo:    { flex: 1 },
+  dayLabel:   { fontSize: FontSize.sm, fontWeight: '600', color: Colors.textDark },
+  dayHours:   { fontSize: FontSize.xs, color: Colors.textMedium, marginTop: hp(2) },
   scheduleNote: {
-    fontSize: 10, color: Colors.textLight, textAlign: 'center',
+    fontSize: FontSize.xs, color: Colors.textLight, textAlign: 'center',
     letterSpacing: 0.5, marginTop: Spacing.md, marginBottom: Spacing.xl,
   },
 });

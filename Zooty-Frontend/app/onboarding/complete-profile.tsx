@@ -1,24 +1,19 @@
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  SafeAreaView,
-  ScrollView,
-  Dimensions,
+  View, Text, StyleSheet, TouchableOpacity,
+  SafeAreaView, ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Colors, Spacing, Radius } from '@/constants/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { Colors, Spacing, Radius, FontSize } from '@/constants/theme';
+import { wp, hp } from '@/constants/Responsive';
 import StepBar from '@/components/StepBar';
 import InputField from '@/components/InputField';
 import PrimaryButton from '@/components/PrimaryButton';
 
-const { width } = Dimensions.get('window');
-
 export default function CompleteProfileScreen() {
   const router = useRouter();
-  const [phone, setPhone] = useState('');
+  const [phone, setPhone]     = useState('');
   const [address, setAddress] = useState('');
 
   return (
@@ -28,10 +23,9 @@ export default function CompleteProfileScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* Top bar */}
         <View style={styles.topRow}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Text style={styles.backIcon}>‹</Text>
+            <Ionicons name="chevron-back" size={wp(24)} color={Colors.primary} />
           </TouchableOpacity>
           <StepBar total={3} current={2} />
         </View>
@@ -45,34 +39,30 @@ export default function CompleteProfileScreen() {
         {/* Avatar */}
         <View style={styles.avatarSection}>
           <View style={styles.avatarCircle}>
-            <Text style={styles.avatarIcon}>👤</Text>
+            <Ionicons name="person" size={wp(40)} color={Colors.primary} style={{ opacity: 0.5 }} />
             <View style={styles.cameraBtn}>
-              <Text style={styles.cameraIcon}>📷</Text>
+              <Ionicons name="camera" size={wp(14)} color={Colors.white} />
             </View>
           </View>
         </View>
 
-        {/* Teléfono */}
         <InputField
           label="Teléfono de contacto"
           placeholder="+34 000 000 000"
-          value={phone}
+          value={phone} 
           onChangeText={setPhone}
           keyboardType="phone-pad"
-          prefixIcon="📞"
         />
 
-        {/* Ubicación */}
-        <View style={styles.locationSection}>
+        <View>
           <InputField
             label="Ubicación principal"
             placeholder="Introduce tu dirección o ciudad"
-            value={address}
+            value={address} 
             onChangeText={setAddress}
-            prefixIcon="📍"
           />
           <TouchableOpacity style={styles.locationLink}>
-            <Text style={styles.locationDot}>●</Text>
+            <Ionicons name="location" size={wp(10)} color={Colors.primary} />
             <Text style={styles.locationText}>Usar ubicación actual</Text>
           </TouchableOpacity>
         </View>
@@ -89,164 +79,80 @@ export default function CompleteProfileScreen() {
             ))}
           </View>
           <View style={styles.mapPinWrapper}>
-            <Text style={styles.mapPin}>📍</Text>
+            <Ionicons name="location" size={wp(28)} color={Colors.primary} />
           </View>
         </View>
 
-        {/* Disclaimer */}
         <Text style={styles.disclaimer}>
           Al continuar, aceptas que Zooty acceda a tu ubicación para mostrarte profesionales cercanos.
         </Text>
 
-        <PrimaryButton
-          label="Siguiente →"
-          onPress={() => router.push('/')} // ← aquí irá el paso 3 del dueño cuando lo tengas
-        />
+        <PrimaryButton label="Siguiente →" onPress={() => router.push('/')} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: Colors.white,
-  },
-  scroll: {
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.xxl,
-  },
+  safe:   { flex: 1, backgroundColor: Colors.white },
+  scroll: { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xxl },
   topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: Spacing.lg,
-    marginBottom: Spacing.xs,
-    gap: Spacing.md,
+    flexDirection: 'row', alignItems: 'center',
+    marginTop: Spacing.lg, marginBottom: Spacing.xs, gap: Spacing.md,
   },
   backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: wp(36), height: wp(36), borderRadius: wp(18),
     backgroundColor: Colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  backIcon: {
-    color: Colors.primary,
-    fontSize: 26,
-    fontWeight: '300',
-    lineHeight: 30,
+    alignItems: 'center', justifyContent: 'center',
   },
   stepLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: Colors.textLight,
-    textAlign: 'center',
-    letterSpacing: 1,
-    marginBottom: Spacing.md,
+    fontSize: FontSize.xs, fontWeight: '600', color: Colors.textLight,
+    textAlign: 'center', letterSpacing: 1, marginBottom: Spacing.md,
   },
-  title: {
-    fontSize: 26,
-    fontWeight: '700',
-    color: Colors.textDark,
-    textAlign: 'center',
-    marginBottom: Spacing.xs,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: Colors.textMedium,
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: Spacing.xl,
-  },
-  avatarSection: {
-    alignItems: 'center',
-    marginBottom: Spacing.xl,
-  },
+  title:    { fontSize: FontSize.xxl, fontWeight: '700', color: Colors.textDark, textAlign: 'center', marginBottom: Spacing.xs },
+  subtitle: { fontSize: FontSize.sm, color: Colors.textMedium, textAlign: 'center', lineHeight: hp(20), marginBottom: Spacing.xl },
+  avatarSection: { alignItems: 'center', marginBottom: Spacing.xl },
   avatarCircle: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
+    width: wp(90), height: wp(90), borderRadius: wp(45),
     backgroundColor: Colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarIcon: {
-    fontSize: 36,
-    opacity: 0.5,
+    alignItems: 'center', justifyContent: 'center',
+    position: 'relative',
   },
   cameraBtn: {
-    position: 'absolute',
-    bottom: 2,
-    right: 2,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    position: 'absolute', bottom: hp(2), right: wp(2),
+    width: wp(28), height: wp(28), borderRadius: wp(14),
     backgroundColor: Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: Colors.white,
-  },
-  cameraIcon: { fontSize: 14 },
-  locationSection: {
-    marginBottom: Spacing.xs,
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 2, borderColor: Colors.white,
   },
   locationLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: -Spacing.sm,
-    marginBottom: Spacing.md,
-    gap: 6,
+    flexDirection: 'row', alignItems: 'center',
+    marginTop: -Spacing.sm, marginBottom: Spacing.md, gap: wp(6),
   },
-  locationDot: {
-    color: Colors.primary,
-    fontSize: 10,
-  },
-  locationText: {
-    color: Colors.primary,
-    fontSize: 13,
-    fontWeight: '600',
-  },
+  locationText: { color: Colors.primary, fontSize: FontSize.sm, fontWeight: '600' },
   mapContainer: {
     width: '100%',
-    height: 180,
+    height: hp(180),
     borderRadius: Radius.lg,
-    backgroundColor: Colors.mapBg,
+    backgroundColor: Colors.mapBg || '#F0F8F6',
     overflow: 'hidden',
     marginBottom: Spacing.md,
     position: 'relative',
   },
-  mapGrid: {
-    flex: 1,
-    padding: 4,
-    gap: 2,
-  },
-  mapRow: {
-    flex: 1,
-    flexDirection: 'row',
-    gap: 2,
-  },
+  mapGrid: { flex: 1, padding: wp(4), gap: hp(2) },
+  mapRow:  { flex: 1, flexDirection: 'row', gap: wp(2) },
   mapCell: {
-    flex: 1,
-    borderRadius: 2,
+    flex: 1, borderRadius: wp(2),
     backgroundColor: 'rgba(61,191,173,0.08)',
-    borderWidth: 0.5,
-    borderColor: 'rgba(61,191,173,0.15)',
+    borderWidth: 0.5, borderColor: 'rgba(61,191,173,0.15)',
   },
   mapPinWrapper: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: [{ translateX: -12 }, { translateY: -24 }],
+    position: 'absolute', top: '50%', left: '50%',
+    transform: [{ translateX: -wp(14) }, { translateY: -hp(14) }],
   },
-  mapPin: { fontSize: 28 },
   disclaimer: {
-    fontSize: 11,
-    color: Colors.textLight,
-    textAlign: 'center',
-    lineHeight: 16,
-    marginBottom: Spacing.xl,
-    paddingHorizontal: Spacing.md,
+    fontSize: FontSize.xs, color: Colors.textLight,
+    textAlign: 'center', lineHeight: hp(16),
+    marginBottom: Spacing.xl, paddingHorizontal: Spacing.md,
   },
 });
