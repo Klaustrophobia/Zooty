@@ -4,6 +4,7 @@ import {
   SafeAreaView, ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors, Spacing, Radius, FontSize } from '@/constants/theme';
 import { wp, hp } from '@/constants/Responsive';
 import StepBar from '@/components/StepBar';
@@ -68,7 +69,7 @@ export default function ProfessionalSpecialtyScreen() {
 
         <TouchableOpacity style={styles.uploadArea} onPress={simulateUpload} activeOpacity={0.8}>
           <View style={styles.uploadIconCircle}>
-            <Text style={styles.uploadEmoji}>☁️</Text>
+            <Ionicons name="cloud-upload-outline" size={wp(24)} color={Colors.primary} />
           </View>
           <Text style={styles.uploadLabel}>Cargar documentos</Text>
           <Text style={styles.uploadSub}>Formatos aceptados: JPG, PNG o PDF (Max 5MB)</Text>
@@ -76,7 +77,7 @@ export default function ProfessionalSpecialtyScreen() {
 
         {docs.map((doc) => (
           <View key={doc} style={styles.docRow}>
-            <Text style={styles.docIcon}>📄</Text>
+            <Ionicons name="document-text-outline" size={wp(18)} color={Colors.primary} />
             <Text style={styles.docName} numberOfLines={1}>{doc}</Text>
             <TouchableOpacity onPress={() => removeDoc(doc)}>
               <Text style={styles.docRemove}>✕</Text>
@@ -85,7 +86,7 @@ export default function ProfessionalSpecialtyScreen() {
         ))}
 
         <View style={styles.verificationBox}>
-          <Text style={styles.verificationEmoji}>✅</Text>
+          <Ionicons name="checkmark-circle" size={wp(20)} color={Colors.primary} style={{ marginTop: hp(2) }} />
           <View style={styles.verificationText}>
             <Text style={styles.verificationTitle}>Proceso de Verificación</Text>
             <Text style={styles.verificationBody}>
@@ -96,7 +97,7 @@ export default function ProfessionalSpecialtyScreen() {
           </View>
         </View>
 
-        <PrimaryButton label="Siguiente →" onPress={() => router.push('/professional/services')} />
+        <PrimaryButton label="Siguiente" onPress={() => router.push('/profesional/registro/services')} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -140,7 +141,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFE5D8',
     alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.sm,
   },
-  uploadEmoji: { fontSize: wp(24) },
   uploadLabel: { fontSize: FontSize.md, fontWeight: '600', color: Colors.textDark, marginBottom: hp(4) },
   uploadSub:   { fontSize: FontSize.xs, color: Colors.textLight },
   docRow: {
@@ -149,7 +149,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md, paddingVertical: hp(10),
     marginBottom: Spacing.sm, gap: Spacing.sm,
   },
-  docIcon:   { fontSize: wp(18) },
   docName:   { flex: 1, fontSize: FontSize.sm, color: Colors.textDark, fontWeight: '500' },
   docRemove: { color: Colors.textLight, fontSize: wp(16), fontWeight: '600' },
   verificationBox: {
@@ -159,7 +158,6 @@ const styles = StyleSheet.create({
     padding: Spacing.md, marginTop: Spacing.md, marginBottom: Spacing.xl,
     gap: Spacing.sm, alignItems: 'flex-start',
   },
-  verificationEmoji:     { fontSize: wp(20), marginTop: hp(2) },
   verificationText:      { flex: 1 },
   verificationTitle:     { fontSize: FontSize.sm, fontWeight: '700', color: Colors.textDark, marginBottom: hp(4) },
   verificationBody:      { fontSize: FontSize.sm, color: Colors.textMedium, lineHeight: hp(19) },

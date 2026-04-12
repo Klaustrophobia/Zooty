@@ -73,7 +73,7 @@ export default function HomeScreen() {
         <View style={styles.headerRight}>
           <TouchableOpacity
             style={styles.notifBtn}
-            onPress={() => router.push('./notifications')}
+            onPress={() => router.push('/cliente/perfil/notificaciones')}
           >
             <Text style={styles.notifIcon}>🔔</Text>
             <View style={styles.notifBadge}>

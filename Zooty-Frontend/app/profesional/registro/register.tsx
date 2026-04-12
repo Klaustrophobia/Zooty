@@ -4,6 +4,7 @@ import {
   SafeAreaView, ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Radius, FontSize } from '@/constants/theme';
 import { wp, hp } from '@/constants/Responsive';
 import StepBar from '@/components/StepBar';
@@ -30,7 +31,7 @@ function SelectField({
         <Text style={value ? styles.selectValue : styles.selectPlaceholder}>
           {value || placeholder}
         </Text>
-        <Text style={styles.chevron}>⌄</Text>
+        <Ionicons name="chevron-down" size={wp(20)} color={Colors.primary} />
       </TouchableOpacity>
       {open && (
         <View style={styles.dropdown}>
@@ -65,7 +66,7 @@ export default function RegisterProfessionalScreen() {
       >
         <View style={styles.topRow}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Text style={styles.backIcon}>‹</Text>
+            <Ionicons name="chevron-back" size={wp(24)} color={Colors.primary} />
           </TouchableOpacity>
           <StepBar total={3} current={1} />
         </View>
@@ -93,8 +94,8 @@ export default function RegisterProfessionalScreen() {
         />
 
         <PrimaryButton
-          label="Siguiente →"
-          onPress={() => router.push('/professional/specialty')}
+          label="Siguiente"
+          onPress={() => router.push('/profesional/registro/specialty')}
           style={styles.cta}
         />
       </ScrollView>
@@ -114,7 +115,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primaryLight,
     alignItems: 'center', justifyContent: 'center',
   },
-  backIcon:  { color: Colors.primary, fontSize: wp(26), fontWeight: '300', lineHeight: hp(30) },
   stepLabel: {
     fontSize: FontSize.xs, fontWeight: '600', color: Colors.textLight,
     textAlign: 'center', letterSpacing: 1, marginBottom: Spacing.lg,
@@ -131,7 +131,6 @@ const styles = StyleSheet.create({
   },
   selectValue:       { fontSize: FontSize.md, color: Colors.textDark },
   selectPlaceholder: { fontSize: FontSize.md, color: Colors.primary },
-  chevron:           { color: Colors.primary, fontSize: wp(20) },
   dropdown: {
     backgroundColor: Colors.white, borderRadius: Radius.md,
     borderWidth: 1.5, borderColor: Colors.borderLight, marginTop: hp(4),

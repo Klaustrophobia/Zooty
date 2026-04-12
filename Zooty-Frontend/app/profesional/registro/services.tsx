@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, StyleSheet, TouchableOpacity,
-  SafeAreaView, ScrollView, Switch,
+  SafeAreaView, ScrollView, Switch, Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors, Spacing, Radius, FontSize } from '@/constants/theme';
 import { wp, hp } from '@/constants/Responsive';
 import { Service, WeekSchedule } from '@/types';
@@ -41,7 +42,7 @@ function DurationPicker({ value, onChange }: { value: string; onChange: (v: stri
         onPress={() => setOpen((v) => !v)} activeOpacity={0.8}
       >
         <Text style={styles.durationValue}>{value}</Text>
-        <Text style={styles.chevron}>⌄</Text>
+        <Ionicons name="chevron-down" size={wp(18)} color={Colors.primary} />
       </TouchableOpacity>
       {open && (
         <View style={styles.durationDropdown}>
@@ -63,6 +64,7 @@ function DurationPicker({ value, onChange }: { value: string; onChange: (v: stri
 
 export default function ProfessionalServicesScreen() {
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
   const [services, setServices] = useState<Service[]>([
     { id: 1, name: '', duration: '1 hora', price: '' },
   ]);
@@ -80,6 +82,41 @@ export default function ProfessionalServicesScreen() {
   const toggleDay = (key: string) =>
     setSchedule((prev) => ({ ...prev, [key]: { ...prev[key], enabled: !prev[key].enabled } }));
 
+  const handleSubmit = async () => {
+    // Validación básica
+    const hasValidServices = services.some(s => s.name.trim() && s.price);
+    if (!hasValidServices) {
+      Alert.alert('Error', 'Agrega al menos un servicio con nombre y precio.');
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      // Simular envío al backend
+      // Aquí iría tu llamada real a la API
+      // const response = await api.post('/professional/register', {
+      //   services,
+      //   schedule
+      // });
+      
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Redirigir al Login con mensaje de confirmación
+      router.replace({
+        pathname: '/login',
+        params: {
+          registrationSuccess: 'true',
+          message: `¡Registro exitoso! Hemos enviado un correo de confirmación a tu cuenta asociada para activar tu perfil profesional.`
+        }
+      });
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo completar el registro. Intenta nuevamente.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView
@@ -89,7 +126,7 @@ export default function ProfessionalServicesScreen() {
       >
         <View style={styles.topRow}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Text style={styles.backIcon}>‹</Text>
+            <Ionicons name="chevron-back" size={wp(24)} color={Colors.primary} />
           </TouchableOpacity>
           <StepBar total={3} current={3} />
         </View>
@@ -102,7 +139,6 @@ export default function ProfessionalServicesScreen() {
 
         {/* Servicios */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionIcon}>🐾</Text>
           <Text style={styles.sectionTitle}>Servicios</Text>
         </View>
 
@@ -149,12 +185,14 @@ export default function ProfessionalServicesScreen() {
         ))}
 
         <TouchableOpacity style={styles.addServiceBtn} onPress={addService} activeOpacity={0.7}>
-          <Text style={styles.addServiceText}>⊕ Añadir otro servicio</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.xs }}>
+            <Ionicons name="add-circle-outline" size={wp(20)} color={Colors.primary} />
+            <Text style={styles.addServiceText}>Añadir otro servicio</Text>
+          </View>
         </TouchableOpacity>
 
         {/* Horarios */}
         <View style={[styles.sectionHeader, { marginTop: Spacing.xl }]}>
-          <Text style={styles.sectionIcon}>🕐</Text>
           <Text style={styles.sectionTitle}>Horarios de atención</Text>
         </View>
 
@@ -182,7 +220,11 @@ export default function ProfessionalServicesScreen() {
           PUEDES EDITAR HORARIOS ESPECÍFICOS POR DÍA MÁS TARDE
         </Text>
 
-        <PrimaryButton label="Finalizar registro →" onPress={() => router.push('/')} />
+        <PrimaryButton 
+          label={loading ? "Procesando..." : "Finalizar registro"} 
+          onPress={handleSubmit}
+          disabled={loading}
+        />
       </ScrollView>
     </SafeAreaView>
   );
@@ -200,7 +242,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primaryLight,
     alignItems: 'center', justifyContent: 'center',
   },
-  backIcon:  { color: Colors.primary, fontSize: wp(26), fontWeight: '300', lineHeight: hp(30) },
   stepLabel: {
     fontSize: FontSize.xs, fontWeight: '600', color: Colors.textLight,
     textAlign: 'center', letterSpacing: 1, marginBottom: Spacing.md,
@@ -243,7 +284,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md, height: hp(46),
   },
   durationValue:   { fontSize: FontSize.sm, color: Colors.textDark },
-  chevron:         { color: Colors.primary, fontSize: wp(18) },
   durationDropdown: {
     position: 'absolute', top: hp(48), left: 0, right: 0, zIndex: 999,
     backgroundColor: Colors.white, borderRadius: Radius.md,

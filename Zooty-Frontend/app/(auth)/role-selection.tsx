@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { Colors, Spacing, Radius, FontSize } from '@/constants/theme';
-import { wp, hp } from '@/constants/Responsive';
-import { UserRole } from '@/types';
-import LogoPlaceholder from '@/components/LogoPlaceholder';
+import Logo from '@/components/Logo';
 import PrimaryButton from '@/components/PrimaryButton';
+import { hp, wp, SCREEN_HEIGHT } from '@/constants/Responsive';
+import { Colors, FontSize, Radius, Spacing } from '@/constants/theme';
+import { UserRole } from '@/types';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface RoleCardProps {
   icon: string;
@@ -46,14 +46,14 @@ export default function RoleSelectionScreen() {
   const [role, setRole] = useState<UserRole>('owner');
 
   const handleContinue = () => {
-    router.push(role === 'owner' ? '/onboarding/register-user' : '/(professional)/register');
+    router.push(role === 'owner' ? '/onboarding/register-user' : '/profesional/registro/register');
   };
 
   return (
     <SafeAreaView style={styles.safe}>
       {/* Logo */}
       <View style={styles.header}>
-        <LogoPlaceholder size="md" />
+        <Logo size="lg" />
       </View>
 
       <Text style={styles.title}>¿Cómo quieres usar{'\n'}Zooty?</Text>
@@ -92,7 +92,7 @@ export default function RoleSelectionScreen() {
       </View>
 
       <View style={styles.ctaWrapper}>
-        <PrimaryButton label="Continuar →" onPress={handleContinue} />
+        <PrimaryButton label="Continuar" onPress={handleContinue} />
       </View>
 
       <TouchableOpacity style={styles.loginRow} onPress={() => router.push('./login')}>
@@ -111,17 +111,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: Spacing.lg,
   },
-  header:  { marginTop: Spacing.xl, marginBottom: Spacing.sm },
+  header: { 
+    marginTop: SCREEN_HEIGHT * 0.05, // 5% de la altura - ajustable
+    marginBottom: Spacing.xs,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   title: {
-    fontSize: FontSize.xxxl,
+    fontSize: FontSize.xxxl, // Mantener tamaño original del tema
     fontWeight: '700',
     color: Colors.textDark,
     textAlign: 'center',
-    marginTop: Spacing.lg,
-    marginBottom: Spacing.xl,
+    marginTop: Spacing.md,
+    marginBottom: Spacing.lg,
     lineHeight: hp(36),
   },
-  cards: { width: '100%', gap: Spacing.md },
+  cards: { 
+    width: '100%', 
+    gap: Spacing.md 
+  },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -138,23 +146,35 @@ const styles = StyleSheet.create({
     elevation: 2,
     gap: Spacing.md,
   },
-  cardSelected:      { borderColor: Colors.primary, backgroundColor: '#F0FAF8' },
-  iconCircle: {
-    width: wp(48), height: wp(48), borderRadius: wp(24),
-    backgroundColor: Colors.primaryLight,
-    alignItems: 'center', justifyContent: 'center',
+  cardSelected: { 
+    borderColor: Colors.primary, 
+    backgroundColor: '#F0FAF8' 
   },
-  iconCircleSelected: { backgroundColor: Colors.primary },
-  cardText:           { flex: 1 },
+  iconCircle: {
+    width: wp(48), 
+    height: wp(48), 
+    borderRadius: wp(24),
+    backgroundColor: Colors.primaryLight,
+    alignItems: 'center', 
+    justifyContent: 'center',
+  },
+  iconCircleSelected: { 
+    backgroundColor: Colors.primary 
+  },
+  cardText: { 
+    flex: 1 
+  },
   cardTitle: {
-    fontSize: FontSize.md,
+    fontSize: FontSize.md, // Mantener tamaño original del tema
     fontWeight: '700',
     color: Colors.textDark,
     marginBottom: hp(2),
   },
-  cardTitleSelected:  { color: Colors.primary },
+  cardTitleSelected: { 
+    color: Colors.primary 
+  },
   cardDesc: {
-    fontSize: FontSize.xs,
+    fontSize: FontSize.xs, // Mantener tamaño original del tema
     color: Colors.textMedium,
     lineHeight: hp(18),
   },
@@ -173,13 +193,41 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: Spacing.lg,
   },
-  dogNote:   { color: Colors.textLight, fontSize: FontSize.xs, marginTop: hp(4) },
-  dots:      { flexDirection: 'row', gap: wp(6), marginBottom: Spacing.md },
-  dot:       { height: hp(8), borderRadius: hp(4) },
-  dotActive: { width: wp(24), backgroundColor: Colors.primary },
-  dotInactive:{ width: wp(8), backgroundColor: Colors.stepPending },
-  ctaWrapper:{ width: '100%', marginBottom: Spacing.md },
-  loginRow:  { marginBottom: Spacing.xl },
-  loginText: { fontSize: FontSize.sm, color: Colors.textMedium },
-  loginLink: { color: Colors.primary, fontWeight: '600' },
+  dogNote: { 
+    color: Colors.textLight, 
+    fontSize: FontSize.xs, // Mantener tamaño original del tema
+    marginTop: hp(4) 
+  },
+  dots: { 
+    flexDirection: 'row', 
+    gap: wp(6), 
+    marginBottom: Spacing.md 
+  },
+  dot: { 
+    height: hp(8), 
+    borderRadius: hp(4) 
+  },
+  dotActive: { 
+    width: wp(24), 
+    backgroundColor: Colors.primary 
+  },
+  dotInactive: { 
+    width: wp(8), 
+    backgroundColor: Colors.stepPending 
+  },
+  ctaWrapper: { 
+    width: '100%', 
+    marginBottom: Spacing.md 
+  },
+  loginRow: { 
+    marginBottom: Spacing.xl 
+  },
+  loginText: { 
+    fontSize: FontSize.sm, // Mantener tamaño original del tema
+    color: Colors.textMedium 
+  },
+  loginLink: { 
+    color: Colors.primary, 
+    fontWeight: '600' 
+  },
 });

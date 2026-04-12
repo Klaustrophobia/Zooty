@@ -7,14 +7,16 @@ interface PrimaryButtonProps {
   label: string;
   onPress: () => void;
   style?: ViewStyle;
+  disabled?: boolean;
 }
 
-export default function PrimaryButton({ label, onPress, style }: PrimaryButtonProps) {
+export default function PrimaryButton({ label, onPress, style, disabled }: PrimaryButtonProps) {
   return (
     <TouchableOpacity
-      style={[styles.button, style]}
+      style={[styles.button, style, disabled && styles.buttonDisabled]}
       activeOpacity={0.85}
       onPress={onPress}
+      disabled={disabled}
     >
       <Text style={styles.label}>{label}</Text>
     </TouchableOpacity>
@@ -34,6 +36,11 @@ const styles = StyleSheet.create({
     shadowRadius: hp(10),
     shadowOffset: { width: 0, height: hp(4) },
     elevation: 5,
+  },
+  buttonDisabled: {
+    backgroundColor: Colors.stepPending || '#ccc',
+    shadowOpacity: 0,
+    elevation: 0,
   },
   label: {
     color: Colors.white,

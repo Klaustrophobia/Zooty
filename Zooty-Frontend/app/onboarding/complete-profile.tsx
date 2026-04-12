@@ -87,7 +87,7 @@ export default function CompleteProfileScreen() {
           Al continuar, aceptas que Zooty acceda a tu ubicación para mostrarte profesionales cercanos.
         </Text>
 
-        <PrimaryButton label="Siguiente →" onPress={() => router.push('/')} />
+        <PrimaryButton label="Siguiente" onPress={() => router.push('/onboarding/register-pet')} />
       </ScrollView>
     </SafeAreaView>
   );

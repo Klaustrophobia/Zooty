@@ -1,10 +1,10 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Colors, Spacing, Radius, FontSize } from '@/constants/theme';
-import { wp, hp } from '@/constants/Responsive';
-import LogoPlaceholder from '@/components/LogoPlaceholder';
+import Logo from '@/components/Logo';
 import PrimaryButton from '@/components/PrimaryButton';
+import { hp, wp, SCREEN_HEIGHT } from '@/constants/Responsive';
+import { Colors, FontSize, Spacing } from '@/constants/theme';
+import { useRouter } from 'expo-router';
+import React from 'react';
+import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 function OnboardingDots({ total = 3, active = 0 }: { total?: number; active?: number }) {
   return (
@@ -22,17 +22,16 @@ export default function OnboardingScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       {/* Saltar */}
-      <TouchableOpacity style={styles.skipBtn} onPress={() => router.push('/role-selection')}>
+      <TouchableOpacity style={styles.skipBtn} onPress={() => router.push('/(auth)/role-selection')}>
         <Text style={styles.skipText}>Saltar</Text>
       </TouchableOpacity>
 
       {/* Círculo decorativo */}
       <View style={styles.bgCircle} />
 
-      {/* Logo */}
+      {/* Logo - Tamaño responsive que no afecta otros elementos */}
       <View style={styles.logoWrapper}>
-        {/* 👇 REEMPLAZA POR: <ZootyLogo width={wp(120)} height={wp(120)} /> */}
-        <LogoPlaceholder size="lg" />
+        <Logo size="xxxl" />
       </View>
 
       {/* Copy */}
@@ -50,7 +49,7 @@ export default function OnboardingScreen() {
 
       {/* CTA */}
       <View style={styles.ctaWrapper}>
-        <PrimaryButton label="Continuar" onPress={() => router.push('/role-selection')} />
+        <PrimaryButton label="Continuar" onPress={() => router.push('/(auth)/role-selection')} />
       </View>
     </SafeAreaView>
   );
@@ -71,7 +70,7 @@ const styles = StyleSheet.create({
   },
   skipText: {
     color: Colors.primary,
-    fontSize: FontSize.md,
+    fontSize: FontSize.md, // Mantener tamaño original del tema
     fontWeight: '500',
   },
   bgCircle: {
@@ -85,18 +84,20 @@ const styles = StyleSheet.create({
     zIndex: 0,
   },
   logoWrapper: {
-    marginTop: '18%',
+    marginTop: SCREEN_HEIGHT * 0.06, // 6% de la altura - ajustable sin afectar otros elementos
     zIndex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   copy: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: Spacing.xl,
-    marginTop: Spacing.xl,
+    marginTop: Spacing.xl, // Restaurado al valor original
   },
   headline: {
-    fontSize: FontSize.xxl,
+    fontSize: FontSize.xxl, // Mantener tamaño original del tema
     fontWeight: '700',
     color: Colors.textDark,
     textAlign: 'center',
@@ -104,7 +105,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   subheadline: {
-    fontSize: FontSize.sm,
+    fontSize: FontSize.sm, // Mantener tamaño original del tema
     color: Colors.textMedium,
     textAlign: 'center',
     lineHeight: hp(22),
