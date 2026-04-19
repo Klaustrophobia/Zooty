@@ -1,28 +1,73 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  SafeAreaView, TextInput, Modal,
+  SafeAreaView, TextInput, Modal, Alert, Platform,
+  Image, Linking,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors, Spacing, Radius, FontSize } from '@/constants/theme';
 import { wp, hp } from '@/constants/Responsive';
 
-const FILTER_CHIPS = ['Tipo de servicio', 'Precio', 'Calificación'];
+let MapView: any = View;
+let Marker: any = View;
+let PROVIDER_GOOGLE: any = undefined;
+
+if (Platform.OS !== 'web') {
+  try {
+    const Maps = require('react-native-maps');
+    MapView = Maps.default;
+    Marker = Maps.Marker;
+    PROVIDER_GOOGLE = Maps.PROVIDER_GOOGLE;
+  } catch (e) {
+    console.log('Mapas no disponibles');
+  }
+}
 
 const PROFESSIONALS = [
-  { id: '1', name: 'Dr. Carlos Ruiz',       specialty: 'Veterinario',              distance: '1.2 km de ti', rating: 4.8, price: 25,  online: true  },
-  { id: '2', name: 'Elena Martínez',         specialty: 'Paseadora y Entrenadora',  distance: '0.5 km de ti', rating: 4.9, price: 15,  online: true  },
-  { id: '3', name: 'Roberto Gómez',          specialty: 'Peluquería Canina',        distance: '2.8 km de ti', rating: 4.7, price: 20,  online: false },
-  { id: '4', name: 'Clínica VetLife',        specialty: 'Urgencias 24h',            distance: '3.1 km de ti', rating: 4.5, price: 40,  online: true  },
+  { id: '1', name: 'Dr. Carlos Ruiz',       specialty: 'Veterinario', distance: 1.2, rating: 4.8, price: 25,  online: true,  lat: 14.0723, lng: -87.1921 },
+  { id: '2', name: 'Elena Martínez',         specialty: 'Paseadora',   distance: 0.5, rating: 4.9, price: 15,  online: true,  lat: 14.0823, lng: -87.2021 },
+  { id: '3', name: 'Roberto Gómez',          specialty: 'Peluquería',  distance: 2.8, rating: 4.7, price: 20,  online: false, lat: 14.0623, lng: -87.1821 },
+  { id: '4', name: 'Clínica VetLife',        specialty: 'Veterinario', distance: 3.1, rating: 4.5, price: 40,  online: true,  lat: 14.0923, lng: -87.1721 },
+  { id: '5', name: 'Ana Paseos',             specialty: 'Paseadora',   distance: 1.8, rating: 4.6, price: 12,  online: true,  lat: 14.0523, lng: -87.2121 },
+  { id: '6', name: 'Spa Canino',             specialty: 'Peluquería',  distance: 2.2, rating: 4.9, price: 35,  online: false, lat: 14.1023, lng: -87.1621 },
 ];
 
 const CATEGORIES = ['Veterinario', 'Peluquería', 'Paseador', 'Entrenamiento', 'Guardería', 'Tienda'];
 
-function FilterModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
-  const [selected, setSelected] = useState<string[]>(['Veterinario']);
-  const toggle = (c: string) =>
-    setSelected((prev) => prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]);
+const HONDURAS_CENTER = {
+  latitude: 15.1999,
+  longitude: -86.2419,
+  latitudeDelta: 7.0,
+  longitudeDelta: 7.0,
+};
+
+function FilterModal({ visible, onClose, onApply }: { visible: boolean; onClose: () => void; onApply: (filters: any) => void }) {
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [tempPriceRange, setTempPriceRange] = useState({ min: 0, max: 500 });
+  const [tempMinRating, setTempMinRating] = useState(0);
+  const [tempMaxDistance, setTempMaxDistance] = useState(50);
+
+  const toggleCategory = (c: string) => {
+    setSelectedCategories((prev) => prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]);
+  };
+
+  const handleApply = () => {
+    onApply({
+      categories: selectedCategories,
+      priceRange: tempPriceRange,
+      minRating: tempMinRating,
+      maxDistance: tempMaxDistance,
+    });
+    onClose();
+  };
+
+  const handleClear = () => {
+    setSelectedCategories([]);
+    setTempPriceRange({ min: 0, max: 500 });
+    setTempMinRating(0);
+    setTempMaxDistance(50);
+  };
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
@@ -35,74 +80,70 @@ function FilterModal({ visible, onClose }: { visible: boolean; onClose: () => vo
         </View>
 
         <ScrollView contentContainerStyle={fStyles.scroll} showsVerticalScrollIndicator={false}>
-          {/* Categoría */}
           <Text style={fStyles.sectionLabel}>CATEGORÍA</Text>
           <View style={fStyles.categoriesGrid}>
             {CATEGORIES.map((cat) => (
               <TouchableOpacity
                 key={cat}
-                style={[fStyles.categoryItem, selected.includes(cat) && fStyles.categoryItemOn]}
-                onPress={() => toggle(cat)}
+                style={[fStyles.categoryItem, selectedCategories.includes(cat) && fStyles.categoryItemOn]}
+                onPress={() => toggleCategory(cat)}
               >
-                <View style={[fStyles.checkbox, selected.includes(cat) && fStyles.checkboxOn]}>
-                  {selected.includes(cat) && <Ionicons name="checkmark" size={wp(12)} color={Colors.white} />}
+                <View style={[fStyles.checkbox, selectedCategories.includes(cat) && fStyles.checkboxOn]}>
+                  {selectedCategories.includes(cat) && <Ionicons name="checkmark" size={wp(12)} color={Colors.white} />}
                 </View>
-                <Text style={[fStyles.categoryText, selected.includes(cat) && fStyles.categoryTextOn]}>
+                <Text style={[fStyles.categoryText, selectedCategories.includes(cat) && fStyles.categoryTextOn]}>
                   {cat}
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
 
-          {/* Rango de precio */}
           <View style={fStyles.sectionRow}>
             <Text style={fStyles.sectionLabel}>RANGO DE PRECIO</Text>
-            <Text style={fStyles.sectionValue}>$20 - $150+</Text>
+            <Text style={fStyles.sectionValue}>${tempPriceRange.min} - ${tempPriceRange.max}</Text>
           </View>
-          {/* Slider visual */}
-          <View style={fStyles.sliderTrack}>
-            <View style={fStyles.sliderFill} />
-            <View style={[fStyles.sliderThumb, { left: '10%' }]} />
-            <View style={[fStyles.sliderThumb, { left: '80%' }]} />
-          </View>
-          <View style={fStyles.sliderLabels}>
-            <Text style={fStyles.sliderLabel}>Mín: $0</Text>
-            <Text style={fStyles.sliderLabel}>Máx: $500</Text>
+          <View style={fStyles.sliderContainer}>
+            <Text style={fStyles.sliderLabelLeft}>${tempPriceRange.min}</Text>
+            <View style={fStyles.sliderTrack}>
+              <View style={[fStyles.sliderFill, { left: `${(tempPriceRange.min / 500) * 100}%`, right: `${100 - (tempPriceRange.max / 500) * 100}%` }]} />
+            </View>
+            <Text style={fStyles.sliderLabelRight}>${tempPriceRange.max}</Text>
           </View>
 
-          {/* Calificación mínima */}
           <View style={fStyles.sectionRow}>
             <Text style={fStyles.sectionLabel}>CALIFICACIÓN MÍNIMA</Text>
-            <Text style={fStyles.sectionValue}>4.0+</Text>
+            <Text style={fStyles.sectionValue}>{tempMinRating}+</Text>
           </View>
           <View style={fStyles.starsRow}>
             {[1, 2, 3, 4, 5].map((i) => (
-              <Ionicons 
-                key={i} 
-                name={i <= 4 ? "star" : "star-outline"} 
-                size={wp(24)} 
-                color={i <= 4 ? "#F4A536" : Colors.borderLight} 
-              />
+              <TouchableOpacity key={i} onPress={() => setTempMinRating(i)}>
+                <Ionicons 
+                  name={i <= tempMinRating ? "star" : "star-outline"} 
+                  size={wp(28)} 
+                  color={i <= tempMinRating ? "#F4A536" : Colors.borderLight} 
+                />
+              </TouchableOpacity>
             ))}
           </View>
 
-          {/* Distancia máxima */}
           <View style={fStyles.sectionRow}>
             <Text style={fStyles.sectionLabel}>DISTANCIA MÁXIMA</Text>
-            <Text style={fStyles.sectionValue}>12 km</Text>
+            <Text style={fStyles.sectionValue}>{tempMaxDistance} km</Text>
           </View>
-          <View style={fStyles.sliderTrack}>
-            <View style={[fStyles.sliderFill, { width: '60%' }]} />
-            <View style={[fStyles.sliderThumb, { left: '60%' }]} />
+          <View style={fStyles.sliderContainer}>
+            <Text style={fStyles.sliderLabelLeft}>0 km</Text>
+            <View style={fStyles.sliderTrack}>
+              <View style={[fStyles.sliderFill, { right: `${100 - (tempMaxDistance / 50) * 100}%` }]} />
+            </View>
+            <Text style={fStyles.sliderLabelRight}>50 km</Text>
           </View>
         </ScrollView>
 
-        {/* Acciones */}
         <View style={fStyles.footer}>
-          <TouchableOpacity style={fStyles.applyBtn} onPress={onClose}>
-            <Text style={fStyles.applyText}>Aplicar filtros →</Text>
+          <TouchableOpacity style={fStyles.applyBtn} onPress={handleApply}>
+            <Text style={fStyles.applyText}>Aplicar filtros</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={fStyles.clearBtn} onPress={() => setSelected([])}>
+          <TouchableOpacity style={fStyles.clearBtn} onPress={handleClear}>
             <Text style={fStyles.clearText}>Limpiar todo</Text>
           </TouchableOpacity>
         </View>
@@ -111,17 +152,148 @@ function FilterModal({ visible, onClose }: { visible: boolean; onClose: () => vo
   );
 }
 
+function MapModal({ visible, onClose, professionals, onSelectProfessional }: { visible: boolean; onClose: () => void; professionals: any[]; onSelectProfessional: (id: string) => void }) {
+  const openInGoogleMaps = (pro: any) => {
+    const url = `https://www.google.com/maps/search/?api=1&query=${pro.lat},${pro.lng}`;
+    Linking.openURL(url);
+  };
+
+  const openInWaze = (pro: any) => {
+    const url = `https://waze.com/ul?ll=${pro.lat},${pro.lng}&navigate=yes`;
+    Linking.openURL(url);
+  };
+
+  return (
+    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+      <SafeAreaView style={styles.mapContainer}>
+        <View style={styles.mapHeader}>
+          <TouchableOpacity onPress={onClose} style={styles.mapBackBtn}>
+            <Ionicons name="arrow-back" size={wp(22)} color={Colors.textDark} />
+          </TouchableOpacity>
+          <Text style={styles.mapTitle}>Profesionales cerca</Text>
+          <View style={styles.mapPlaceholder} />
+        </View>
+        
+        {Platform.OS !== 'web' ? (
+          <MapView
+            provider={PROVIDER_GOOGLE}
+            style={styles.map}
+            initialRegion={HONDURAS_CENTER}
+            showsUserLocation={true}
+            showsMyLocationButton={true}
+          >
+            {professionals.map((pro) => (
+              <Marker
+                key={pro.id}
+                coordinate={{ latitude: pro.lat, longitude: pro.lng }}
+                title={pro.name}
+                description={`${pro.specialty} • ${pro.distance} km`}
+                onPress={() => {
+                  Alert.alert(
+                    pro.name,
+                    `${pro.specialty}\nDesde $${pro.price}\n${pro.distance} km de ti`,
+                    [
+                      { text: 'Cancelar', style: 'cancel' },
+                      { text: 'Reservar', onPress: () => {
+                        onClose();
+                        onSelectProfessional(pro.id);
+                      }}
+                    ]
+                  );
+                }}
+              />
+            ))}
+          </MapView>
+        ) : (
+          <ScrollView style={styles.webMapList} showsVerticalScrollIndicator={false}>
+            <View style={styles.webMapPlaceholder}>
+              <MaterialCommunityIcons name="map-marker-radius" size={wp(48)} color={Colors.primary} />
+              <Text style={styles.webMapPlaceholderTitle}>Profesionales en el mapa</Text>
+              <Text style={styles.webMapPlaceholderText}>
+                Selecciona un profesional para ver su ubicación en Google Maps o Waze
+              </Text>
+            </View>
+            
+            {professionals.map((pro) => (
+              <View key={pro.id} style={styles.webMapCard}>
+                <View style={styles.webMapCardHeader}>
+                  <View>
+                    <Text style={styles.webMapCardName}>{pro.name}</Text>
+                    <Text style={styles.webMapCardSpecialty}>{pro.specialty}</Text>
+                  </View>
+                  <View style={styles.webMapCardPrice}>
+                    <Text style={styles.webMapCardPriceText}>${pro.price}</Text>
+                  </View>
+                </View>
+                
+                <View style={styles.webMapCardDetails}>
+                  <View style={styles.webMapCardDetail}>
+                    <Ionicons name="star" size={wp(14)} color="#F4A536" />
+                    <Text style={styles.webMapCardDetailText}>{pro.rating}</Text>
+                  </View>
+                  <View style={styles.webMapCardDetail}>
+                    <Ionicons name="location-outline" size={wp(14)} color={Colors.textMedium} />
+                    <Text style={styles.webMapCardDetailText}>{pro.distance} km</Text>
+                  </View>
+                  {pro.online && (
+                    <View style={styles.webMapCardOnline}>
+                      <View style={styles.webMapCardOnlineDot} />
+                      <Text style={styles.webMapCardOnlineText}>En línea</Text>
+                    </View>
+                  )}
+                </View>
+                
+                <View style={styles.webMapCardActions}>
+                  <TouchableOpacity 
+                    style={styles.webMapActionBtn}
+                    onPress={() => openInGoogleMaps(pro)}
+                  >
+                    <Ionicons name="map-outline" size={wp(18)} color={Colors.white} />
+                    <Text style={styles.webMapActionText}>Google Maps</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    style={[styles.webMapActionBtn, styles.wazeBtn]}
+                    onPress={() => openInWaze(pro)}
+                  >
+                    <MaterialCommunityIcons name="waze" size={wp(18)} color={Colors.white} />
+                    <Text style={styles.webMapActionText}>Waze</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    style={styles.webMapReserveBtn}
+                    onPress={() => {
+                      onClose();
+                      onSelectProfessional(pro.id);
+                    }}
+                  >
+                    <Text style={styles.webMapReserveText}>Reservar</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+        )}
+
+        <View style={styles.mapFooter}>
+          <Text style={styles.mapFooterText}>{professionals.length} profesionales en esta zona</Text>
+        </View>
+      </SafeAreaView>
+    </Modal>
+  );
+}
+
 export default function BuscarScreen() {
   const router = useRouter();
-  const [query, setQuery]           = useState('');
-  const [activeChip, setActiveChip] = useState('Tipo de servicio');
+  const [query, setQuery] = useState('');
   const [showFilter, setShowFilter] = useState(false);
-
-  const filtered = PROFESSIONALS.filter(
-    (p) =>
-      p.name.toLowerCase().includes(query.toLowerCase()) ||
-      p.specialty.toLowerCase().includes(query.toLowerCase())
-  );
+  const [showMap, setShowMap] = useState(false);
+  const [activeFilters, setActiveFilters] = useState({
+    categories: [] as string[],
+    priceRange: { min: 0, max: 500 },
+    minRating: 0,
+    maxDistance: 50,
+  });
 
   const getProfessionalIcon = (specialty: string) => {
     if (specialty.includes('Veterinario')) return 'medical-bag';
@@ -130,14 +302,44 @@ export default function BuscarScreen() {
     return 'paw';
   };
 
+  const filteredProfessionals = PROFESSIONALS.filter((pro) => {
+    const matchesQuery = pro.name.toLowerCase().includes(query.toLowerCase()) ||
+                        pro.specialty.toLowerCase().includes(query.toLowerCase());
+    
+    const matchesCategory = activeFilters.categories.length === 0 ||
+                           activeFilters.categories.some(cat => pro.specialty.includes(cat));
+    
+    const matchesPrice = pro.price >= activeFilters.priceRange.min &&
+                        pro.price <= activeFilters.priceRange.max;
+    
+    const matchesRating = pro.rating >= activeFilters.minRating;
+    
+    const matchesDistance = pro.distance <= activeFilters.maxDistance;
+    
+    return matchesQuery && matchesCategory && matchesPrice && matchesRating && matchesDistance;
+  });
+
+  const handleApplyFilters = (filters: any) => {
+    setActiveFilters(filters);
+  };
+
+  const handleSelectProfessional = (id: string) => {
+    setShowMap(false);
+    router.push(`/cliente/citas/agendar?pro=${id}`);
+  };
+
+  const hasActiveFilters = activeFilters.categories.length > 0 ||
+                          activeFilters.priceRange.min > 0 ||
+                          activeFilters.priceRange.max < 500 ||
+                          activeFilters.minRating > 0 ||
+                          activeFilters.maxDistance < 50;
+
   return (
     <SafeAreaView style={styles.safe}>
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.pageTitle}>Explorar</Text>
       </View>
 
-      {/* Buscador */}
       <View style={styles.searchRow}>
         <View style={styles.searchBox}>
           <Ionicons name="search-outline" size={wp(18)} color={Colors.textLight} />
@@ -148,91 +350,105 @@ export default function BuscarScreen() {
             value={query}
             onChangeText={setQuery}
           />
+          {query.length > 0 && (
+            <TouchableOpacity onPress={() => setQuery('')}>
+              <Ionicons name="close-circle" size={wp(18)} color={Colors.textLight} />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
-      {/* Chips de filtro */}
       <View style={styles.chipsRow}>
-        {FILTER_CHIPS.map((chip) => (
-          <TouchableOpacity
-            key={chip}
-            style={[styles.chip, activeChip === chip && styles.chipActive]}
-            onPress={() => {
-              setActiveChip(chip);
-              if (chip === 'Tipo de servicio') setShowFilter(true);
-            }}
-          >
-            <Text style={[styles.chipText, activeChip === chip && styles.chipTextActive]}>
-              {chip}{chip === 'Tipo de servicio' ? ' ˅' : ''}
-            </Text>
-          </TouchableOpacity>
-        ))}
-        {/* Filtro avanzado */}
+        <TouchableOpacity
+          style={[styles.chip, hasActiveFilters && styles.chipActive]}
+          onPress={() => setShowFilter(true)}
+        >
+          <Text style={[styles.chipText, hasActiveFilters && styles.chipTextActive]}>
+            Filtros {hasActiveFilters && `(${activeFilters.categories.length || '★'})`}
+          </Text>
+        </TouchableOpacity>
         <TouchableOpacity style={styles.filterIconBtn} onPress={() => setShowFilter(true)}>
           <Ionicons name="options-outline" size={wp(18)} color={Colors.textMedium} />
         </TouchableOpacity>
       </View>
 
-      {/* Count */}
       <View style={styles.countRow}>
-        <Text style={styles.countText}>PROFESIONALES CERCANOS ({filtered.length * 10 + 2})</Text>
+        <Text style={styles.countText}>{filteredProfessionals.length} PROFESIONALES ENCONTRADOS</Text>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        {filtered.map((pro) => (
-          <TouchableOpacity
-            key={pro.id}
-            style={styles.proCard}
-            activeOpacity={0.8}
-            onPress={() => router.push(`/citas/agendar?pro=${pro.id}` as any)}
-          >
-            <View style={styles.proAvatarWrapper}>
-              <View style={styles.proAvatar}>
-                <MaterialCommunityIcons 
-                  name={getProfessionalIcon(pro.specialty)} 
-                  size={wp(28)} 
-                  color={Colors.primary} 
-                />
+        {filteredProfessionals.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Ionicons name="search-outline" size={wp(56)} color={Colors.textLight} />
+            <Text style={styles.emptyTitle}>Sin resultados</Text>
+            <Text style={styles.emptySubtitle}>No encontramos profesionales con esos filtros</Text>
+          </View>
+        ) : (
+          filteredProfessionals.map((pro) => (
+            <TouchableOpacity
+              key={pro.id}
+              style={styles.proCard}
+              activeOpacity={0.8}
+              onPress={() => handleSelectProfessional(pro.id)}
+            >
+              <View style={styles.proAvatarWrapper}>
+                <View style={styles.proAvatar}>
+                  <MaterialCommunityIcons 
+                    name={getProfessionalIcon(pro.specialty)} 
+                    size={wp(28)} 
+                    color={Colors.primary} 
+                  />
+                </View>
+                {pro.online && <View style={styles.onlineDot} />}
               </View>
-              {pro.online && <View style={styles.onlineDot} />}
-            </View>
 
-            <View style={styles.proInfo}>
-              <View style={styles.proNameRow}>
-                <Text style={styles.proName}>{pro.name}</Text>
-                <View style={styles.ratingPill}>
-                  <Ionicons name="star" size={wp(11)} color="#F4A536" />
-                  <Text style={styles.ratingVal}>{pro.rating}</Text>
+              <View style={styles.proInfo}>
+                <View style={styles.proNameRow}>
+                  <Text style={styles.proName}>{pro.name}</Text>
+                  <View style={styles.ratingPill}>
+                    <Ionicons name="star" size={wp(11)} color="#F4A536" />
+                    <Text style={styles.ratingVal}>{pro.rating}</Text>
+                  </View>
+                </View>
+                <Text style={styles.proSpecialty}>{pro.specialty}</Text>
+                <View style={styles.proFooter}>
+                  <View style={styles.distanceRow}>
+                    <Ionicons name="location-outline" size={wp(12)} color={Colors.textMedium} />
+                    <Text style={styles.distText}>{pro.distance} km de ti</Text>
+                  </View>
+                  <Text style={styles.proPrice}>Desde <Text style={styles.proPriceVal}>${pro.price}</Text></Text>
                 </View>
               </View>
-              <Text style={styles.proSpecialty}>{pro.specialty}</Text>
-              <View style={styles.proFooter}>
-                <View style={styles.distanceRow}>
-                  <Ionicons name="location-outline" size={wp(12)} color={Colors.textMedium} />
-                  <Text style={styles.distText}>{pro.distance}</Text>
-                </View>
-                <Text style={styles.proPrice}>Desde <Text style={styles.proPriceVal}>${pro.price}</Text></Text>
-              </View>
-            </View>
-          </TouchableOpacity>
-        ))}
-        <View style={{ height: hp(16) }} />
+            </TouchableOpacity>
+          ))
+        )}
+        <View style={{ height: hp(80) }} />
       </ScrollView>
 
-      {/* Botón flotante Ver mapa */}
-      <TouchableOpacity style={styles.mapFab}>
+      <TouchableOpacity style={styles.mapFab} onPress={() => setShowMap(true)}>
         <Ionicons name="map-outline" size={wp(18)} color={Colors.white} />
         <Text style={styles.mapFabText}>Ver mapa</Text>
       </TouchableOpacity>
 
-      <FilterModal visible={showFilter} onClose={() => setShowFilter(false)} />
+      <FilterModal 
+        visible={showFilter} 
+        onClose={() => setShowFilter(false)} 
+        onApply={handleApplyFilters}
+      />
+
+      <MapModal 
+        visible={showMap}
+        onClose={() => setShowMap(false)}
+        professionals={filteredProfessionals}
+        onSelectProfessional={handleSelectProfessional}
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe:      { flex: 1, backgroundColor: Colors.background },
-  header:    { paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, paddingBottom: Spacing.sm },
+  safe: { flex: 1, backgroundColor: Colors.background },
+  header: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, paddingBottom: Spacing.sm },
   pageTitle: { fontSize: FontSize.xxxl, fontWeight: '700', color: Colors.textDark },
   searchRow: { paddingHorizontal: Spacing.lg, marginBottom: Spacing.sm },
   searchBox: {
@@ -251,17 +467,17 @@ const styles = StyleSheet.create({
     borderRadius: Radius.full, borderWidth: 1.5,
     borderColor: Colors.borderLight, backgroundColor: Colors.white,
   },
-  chipActive:     { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  chipText:       { fontSize: FontSize.xs, color: Colors.textMedium, fontWeight: '600' },
+  chipActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
+  chipText: { fontSize: FontSize.xs, color: Colors.textMedium, fontWeight: '600' },
   chipTextActive: { color: Colors.white },
   filterIconBtn: {
     width: wp(36), height: wp(36), borderRadius: wp(18),
     backgroundColor: Colors.white, borderWidth: 1.5,
     borderColor: Colors.borderLight, alignItems: 'center', justifyContent: 'center',
   },
-  countRow:   { paddingHorizontal: Spacing.lg, marginBottom: Spacing.sm },
-  countText:  { fontSize: FontSize.xs, fontWeight: '700', color: Colors.textLight, letterSpacing: 0.5 },
-  scroll:     { paddingHorizontal: Spacing.lg },
+  countRow: { paddingHorizontal: Spacing.lg, marginBottom: Spacing.sm },
+  countText: { fontSize: FontSize.xs, fontWeight: '700', color: Colors.textLight, letterSpacing: 0.5 },
+  scroll: { paddingHorizontal: Spacing.lg },
   proCard: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: Colors.white, borderRadius: Radius.lg,
@@ -279,21 +495,21 @@ const styles = StyleSheet.create({
     width: wp(12), height: wp(12), borderRadius: wp(6),
     backgroundColor: '#4CAF50', borderWidth: 2, borderColor: Colors.white,
   },
-  proInfo:      { flex: 1 },
-  proNameRow:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: hp(2) },
-  proName:      { fontSize: FontSize.md, fontWeight: '700', color: Colors.textDark, flex: 1 },
+  proInfo: { flex: 1 },
+  proNameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: hp(2) },
+  proName: { fontSize: FontSize.md, fontWeight: '700', color: Colors.textDark, flex: 1 },
   ratingPill: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: '#FFFBEA', borderRadius: Radius.full,
     paddingHorizontal: wp(6), paddingVertical: hp(2), gap: wp(2),
   },
-  ratingVal:    { fontSize: FontSize.xs, fontWeight: '700', color: Colors.textDark },
+  ratingVal: { fontSize: FontSize.xs, fontWeight: '700', color: Colors.textDark },
   proSpecialty: { fontSize: FontSize.xs, color: Colors.textMedium, marginBottom: hp(6) },
-  proFooter:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  distanceRow:  { flexDirection: 'row', alignItems: 'center', gap: wp(2) },
-  distText:     { fontSize: FontSize.xs, color: Colors.textMedium },
-  proPrice:     { fontSize: FontSize.xs, color: Colors.textMedium },
-  proPriceVal:  { color: Colors.primary, fontWeight: '700', fontSize: FontSize.sm },
+  proFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  distanceRow: { flexDirection: 'row', alignItems: 'center', gap: wp(2) },
+  distText: { fontSize: FontSize.xs, color: Colors.textMedium },
+  proPrice: { fontSize: FontSize.xs, color: Colors.textMedium },
+  proPriceVal: { color: Colors.primary, fontWeight: '700', fontSize: FontSize.sm },
   mapFab: {
     position: 'absolute', bottom: hp(24), alignSelf: 'center',
     flexDirection: 'row', alignItems: 'center',
@@ -303,28 +519,127 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: hp(4) }, elevation: 8,
   },
   mapFabText: { color: Colors.white, fontSize: FontSize.sm, fontWeight: '700' },
+  emptyState: { alignItems: 'center', paddingTop: hp(64) },
+  emptyTitle: { fontSize: FontSize.xl, fontWeight: '700', color: Colors.textDark, marginTop: Spacing.md, marginBottom: Spacing.sm },
+  emptySubtitle: { fontSize: FontSize.sm, color: Colors.textMedium, textAlign: 'center' },
+  mapContainer: { flex: 1, backgroundColor: Colors.background },
+  mapHeader: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md,
+    backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.borderLight,
+  },
+  mapBackBtn: {
+    width: wp(40), height: wp(40), borderRadius: wp(20),
+    backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center',
+  },
+  mapTitle: { fontSize: FontSize.lg, fontWeight: '700', color: Colors.textDark },
+  mapPlaceholder: { width: wp(40) },
+  map: { flex: 1 },
+  mapFooter: {
+    padding: Spacing.md, backgroundColor: Colors.white,
+    borderTopWidth: 1, borderTopColor: Colors.borderLight, alignItems: 'center',
+  },
+  mapFooterText: { fontSize: FontSize.sm, color: Colors.textMedium },
+  webMapList: { flex: 1, paddingHorizontal: Spacing.lg },
+  webMapPlaceholder: {
+    alignItems: 'center', paddingVertical: hp(32),
+    backgroundColor: '#F0FAF8', borderRadius: Radius.lg, marginVertical: Spacing.md,
+  },
+  webMapPlaceholderTitle: {
+    fontSize: FontSize.md, fontWeight: '700', color: Colors.textDark,
+    marginTop: Spacing.md, marginBottom: Spacing.sm,
+  },
+  webMapPlaceholderText: {
+    fontSize: FontSize.sm, color: Colors.textMedium,
+    textAlign: 'center', paddingHorizontal: Spacing.xl,
+  },
+  webMapCard: {
+    backgroundColor: Colors.white, borderRadius: Radius.lg,
+    padding: Spacing.md, marginBottom: Spacing.md,
+    shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: wp(10),
+    shadowOffset: { width: 0, height: hp(2) }, elevation: 2,
+  },
+  webMapCardHeader: {
+    flexDirection: 'row', justifyContent: 'space-between',
+    alignItems: 'flex-start', marginBottom: Spacing.sm,
+  },
+  webMapCardName: {
+    fontSize: FontSize.md, fontWeight: '700', color: Colors.textDark,
+    marginBottom: hp(2),
+  },
+  webMapCardSpecialty: {
+    fontSize: FontSize.xs, color: Colors.textMedium,
+  },
+  webMapCardPrice: {
+    backgroundColor: Colors.primary, borderRadius: Radius.md,
+    paddingHorizontal: wp(12), paddingVertical: hp(6),
+  },
+  webMapCardPriceText: {
+    fontSize: FontSize.sm, fontWeight: '700', color: Colors.white,
+  },
+  webMapCardDetails: {
+    flexDirection: 'row', alignItems: 'center',
+    gap: Spacing.md, marginBottom: Spacing.md,
+  },
+  webMapCardDetail: {
+    flexDirection: 'row', alignItems: 'center', gap: wp(4),
+  },
+  webMapCardDetailText: {
+    fontSize: FontSize.xs, color: Colors.textMedium,
+  },
+  webMapCardOnline: {
+    flexDirection: 'row', alignItems: 'center', gap: wp(4),
+  },
+  webMapCardOnlineDot: {
+    width: wp(8), height: wp(8), borderRadius: wp(4),
+    backgroundColor: '#4CAF50',
+  },
+  webMapCardOnlineText: {
+    fontSize: FontSize.xs, color: '#4CAF50', fontWeight: '600',
+  },
+  webMapCardActions: {
+    flexDirection: 'row', gap: Spacing.sm,
+  },
+  webMapActionBtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: Colors.primary, borderRadius: Radius.full,
+    paddingVertical: hp(10), gap: Spacing.xs,
+  },
+  wazeBtn: {
+    backgroundColor: '#33CCFF',
+  },
+  webMapActionText: {
+    fontSize: FontSize.xs, fontWeight: '600', color: Colors.white,
+  },
+  webMapReserveBtn: {
+    flex: 1, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: Colors.primaryLight, borderRadius: Radius.full,
+    paddingVertical: hp(10),
+  },
+  webMapReserveText: {
+    fontSize: FontSize.xs, fontWeight: '700', color: Colors.primary,
+  },
 });
 
-// ─── Estilos del Modal de Filtros ────────────────────────
 const fStyles = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: Colors.white },
+  safe: { flex: 1, backgroundColor: Colors.white },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: Spacing.lg, paddingTop: Spacing.lg, paddingBottom: Spacing.md,
     borderBottomWidth: 1, borderBottomColor: Colors.borderLight,
   },
-  title:    { fontSize: FontSize.xxl, fontWeight: '700', color: Colors.textDark },
+  title: { fontSize: FontSize.xxl, fontWeight: '700', color: Colors.textDark },
   closeBtn: {
     width: wp(32), height: wp(32), borderRadius: wp(16),
     backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center',
   },
-  scroll:        { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xxl },
+  scroll: { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xxl },
   sectionRow: {
     flexDirection: 'row', justifyContent: 'space-between',
     alignItems: 'center', marginTop: Spacing.xl, marginBottom: Spacing.md,
   },
-  sectionLabel:  { fontSize: FontSize.xs, fontWeight: '700', color: Colors.textLight, letterSpacing: 0.5 },
-  sectionValue:  { fontSize: FontSize.sm, fontWeight: '700', color: Colors.primary },
+  sectionLabel: { fontSize: FontSize.xs, fontWeight: '700', color: Colors.textLight, letterSpacing: 0.5 },
+  sectionValue: { fontSize: FontSize.sm, fontWeight: '700', color: Colors.primary },
   categoriesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
   categoryItem: {
     flexDirection: 'row', alignItems: 'center',
@@ -338,27 +653,18 @@ const fStyles = StyleSheet.create({
     borderWidth: 2, borderColor: Colors.borderLight,
     alignItems: 'center', justifyContent: 'center',
   },
-  checkboxOn:    { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  categoryText:  { fontSize: FontSize.sm, color: Colors.textMedium, fontWeight: '500' },
-  categoryTextOn:{ color: Colors.primary, fontWeight: '700' },
+  checkboxOn: { backgroundColor: Colors.primary, borderColor: Colors.primary },
+  categoryText: { fontSize: FontSize.sm, color: Colors.textMedium, fontWeight: '500' },
+  categoryTextOn: { color: Colors.primary, fontWeight: '700' },
+  sliderContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.sm },
+  sliderLabelLeft: { fontSize: FontSize.xs, color: Colors.textLight, width: wp(40) },
+  sliderLabelRight: { fontSize: FontSize.xs, color: Colors.textLight, width: wp(40), textAlign: 'right' },
   sliderTrack: {
-    width: '100%', height: hp(6), backgroundColor: Colors.borderLight,
-    borderRadius: hp(3), position: 'relative', marginBottom: Spacing.sm,
+    flex: 1, height: hp(6), backgroundColor: Colors.borderLight,
+    borderRadius: hp(3), position: 'relative', marginHorizontal: Spacing.sm,
   },
-  sliderFill: {
-    position: 'absolute', left: '10%', right: '20%',
-    height: '100%', backgroundColor: Colors.primary, borderRadius: hp(3),
-  },
-  sliderThumb: {
-    position: 'absolute', top: -hp(7),
-    width: wp(20), height: wp(20), borderRadius: wp(10),
-    backgroundColor: Colors.white, borderWidth: 2.5, borderColor: Colors.primary,
-    shadowColor: Colors.primary, shadowOpacity: 0.25, shadowRadius: wp(4),
-    shadowOffset: { width: 0, height: hp(2) }, elevation: 3,
-  },
-  sliderLabels: { flexDirection: 'row', justifyContent: 'space-between' },
-  sliderLabel:  { fontSize: FontSize.xs, color: Colors.textLight },
-  starsRow:     { flexDirection: 'row', gap: Spacing.sm, marginBottom: Spacing.sm },
+  sliderFill: { position: 'absolute', height: '100%', backgroundColor: Colors.primary, borderRadius: hp(3) },
+  starsRow: { flexDirection: 'row', gap: Spacing.sm, marginBottom: Spacing.sm },
   footer: {
     paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xl, paddingTop: Spacing.md,
     borderTopWidth: 1, borderTopColor: Colors.borderLight,
@@ -370,6 +676,6 @@ const fStyles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   applyText: { color: Colors.white, fontSize: FontSize.lg, fontWeight: '600' },
-  clearBtn:  { paddingVertical: Spacing.sm },
+  clearBtn: { paddingVertical: Spacing.sm },
   clearText: { fontSize: FontSize.sm, color: Colors.textMedium, fontWeight: '500' },
 });

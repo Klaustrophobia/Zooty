@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors, Spacing, Radius, FontSize } from '@/constants/theme';
 import { wp, hp } from '@/constants/Responsive';
 
@@ -21,6 +22,8 @@ interface Appointment {
   status: string;
   price: number;
 }
+
+const STORAGE_KEY = 'citas_appointments';
 
 const INITIAL_APPOINTMENTS: Record<TabType, Appointment[]> = {
   proximas: [
@@ -54,59 +57,80 @@ const getProfessionalIcon = (proName: string) => {
 export default function CitasScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  
+
   const [tab, setTab] = useState<TabType>('proximas');
   const [appointments, setAppointments] = useState(INITIAL_APPOINTMENTS);
-  
-  // Estados para el modal de eliminación
+  const [isLoaded, setIsLoaded] = useState(false);
+
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [appointmentToDelete, setAppointmentToDelete] = useState<Appointment | null>(null);
+
   
-  // Estados para mensajes de éxito
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const slideAnim = useRef(new Animated.Value(-100)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
+
   
-  // Referencia para controlar si ya se procesó el parámetro
   const processedRef = useRef(false);
 
+  
   useEffect(() => {
-    // Solo procesar una vez
+    const loadAppointments = async () => {
+      try {
+        const saved = await AsyncStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          setAppointments(JSON.parse(saved));
+        }
+      } catch (e) {
+        console.error('Error cargando citas desde AsyncStorage:', e);
+      } finally {
+        setIsLoaded(true);
+      }
+    };
+    loadAppointments();
+  }, []);
+
+
+  useEffect(() => {
+  
+    if (!isLoaded) return;
+
+    const saveAppointments = async () => {
+      try {
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(appointments));
+      } catch (e) {
+        console.error('Error guardando citas en AsyncStorage:', e);
+      }
+    };
+    saveAppointments();
+  }, [appointments, isLoaded]);
+
+  
+  useEffect(() => {
+    if (!isLoaded) return;
     if (processedRef.current) return;
-    
-    // Manejar actualización de cita reagendada
+
     if (params.updatedAppointment) {
       try {
         const updatedApt = JSON.parse(params.updatedAppointment as string);
-        
+
         setAppointments(prev => {
           const newAppointments = { ...prev };
-          
-          // Eliminar la cita antigua de todas las listas
           Object.keys(newAppointments).forEach((key) => {
             newAppointments[key as TabType] = newAppointments[key as TabType].filter(
               a => a.id !== updatedApt.id
             );
           });
-          
-          // Agregar la cita actualizada a próximas
           newAppointments.proximas = [updatedApt, ...newAppointments.proximas];
-          
           return newAppointments;
         });
-        
-        // Cambiar a la pestaña de próximas
+
         setTab('proximas');
-        
-        // Mostrar mensaje de éxito
         setSuccessMessage('¡Cita reagendada exitosamente!');
         setShowSuccess(true);
-        
-        // Marcar como procesado
         processedRef.current = true;
-        
-        // Animación de entrada
+
         Animated.parallel([
           Animated.spring(slideAnim, {
             toValue: 0,
@@ -120,47 +144,33 @@ export default function CitasScreen() {
             useNativeDriver: true
           })
         ]).start();
-        
-        // Ocultar después de 4 segundos
+
         const timer = setTimeout(() => {
           Animated.parallel([
-            Animated.timing(slideAnim, {
-              toValue: -100,
-              duration: 300,
-              useNativeDriver: true
-            }),
-            Animated.timing(fadeAnim, {
-              toValue: 0,
-              duration: 300,
-              useNativeDriver: true
-            })
+            Animated.timing(slideAnim, { toValue: -100, duration: 300, useNativeDriver: true }),
+            Animated.timing(fadeAnim, { toValue: 0, duration: 300, useNativeDriver: true })
           ]).start(() => setShowSuccess(false));
         }, 4000);
-        
-        // Limpiar los parámetros de la URL sin causar re-render
+
         router.replace('/cliente/(tabs)/citas');
-        
         return () => clearTimeout(timer);
       } catch (error) {
         console.error('Error parsing updated appointment:', error);
       }
     }
-    
-    // Mostrar mensaje de éxito general
+
     if (params.showSuccessMessage === 'true' && !processedRef.current) {
       let message = 'Operación completada exitosamente';
-      
       if (params.successType === 'reschedule') {
         message = '¡Cita reagendada exitosamente!';
       } else if (params.successType === 'cancel') {
         message = 'Cita cancelada exitosamente';
       }
-      
+
       setSuccessMessage(message);
       setShowSuccess(true);
-      
       processedRef.current = true;
-      
+
       Animated.parallel([
         Animated.spring(slideAnim, {
           toValue: 0,
@@ -174,64 +184,24 @@ export default function CitasScreen() {
           useNativeDriver: true
         })
       ]).start();
-      
+
       const timer = setTimeout(() => {
         Animated.parallel([
-          Animated.timing(slideAnim, {
-            toValue: -100,
-            duration: 300,
-            useNativeDriver: true
-          }),
-          Animated.timing(fadeAnim, {
-            toValue: 0,
-            duration: 300,
-            useNativeDriver: true
-          })
+          Animated.timing(slideAnim, { toValue: -100, duration: 300, useNativeDriver: true }),
+          Animated.timing(fadeAnim, { toValue: 0, duration: 300, useNativeDriver: true })
         ]).start(() => setShowSuccess(false));
       }, 4000);
-      
-      // Limpiar los parámetros de la URL
+
       router.replace('/cliente/(tabs)/citas');
-      
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [isLoaded]);
 
-  const handleDeletePress = (apt: Appointment) => {
-    setAppointmentToDelete(apt);
-    setDeleteModalVisible(true);
-  };
-
-  const handleConfirmDelete = () => {
-    if (!appointmentToDelete) return;
-    
-    // Actualizar el estado moviendo la cita a canceladas
-    setAppointments(prev => {
-      const newAppointments = { ...prev };
-      
-      // Eliminar de todas las listas
-      Object.keys(newAppointments).forEach((key) => {
-        newAppointments[key as TabType] = newAppointments[key as TabType].filter(
-          a => a.id !== appointmentToDelete.id
-        );
-      });
-      
-      // Agregar a canceladas con estado actualizado
-      const cancelledAppointment = {
-        ...appointmentToDelete,
-        status: 'cancelada'
-      };
-      newAppointments.canceladas = [cancelledAppointment, ...newAppointments.canceladas];
-      
-      return newAppointments;
-    });
-    
-    setDeleteModalVisible(false);
-    
-    // Mostrar mensaje de éxito
-    setSuccessMessage('Cita cancelada exitosamente');
+  // ─── Helpers de animación de éxito ──────────────────────────────────────────
+  const showSuccessToast = (message: string, duration = 3000) => {
+    setSuccessMessage(message);
     setShowSuccess(true);
-    
+
     Animated.parallel([
       Animated.spring(slideAnim, {
         toValue: 0,
@@ -245,22 +215,45 @@ export default function CitasScreen() {
         useNativeDriver: true
       })
     ]).start();
-    
+
     setTimeout(() => {
       Animated.parallel([
-        Animated.timing(slideAnim, {
-          toValue: -100,
-          duration: 300,
-          useNativeDriver: true
-        }),
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true
-        })
+        Animated.timing(slideAnim, { toValue: -100, duration: 300, useNativeDriver: true }),
+        Animated.timing(fadeAnim, { toValue: 0, duration: 300, useNativeDriver: true })
       ]).start(() => setShowSuccess(false));
-    }, 3000);
-    
+    }, duration);
+  };
+
+  const hideSuccessToast = () => {
+    Animated.parallel([
+      Animated.timing(slideAnim, { toValue: -100, duration: 300, useNativeDriver: true }),
+      Animated.timing(fadeAnim, { toValue: 0, duration: 300, useNativeDriver: true })
+    ]).start(() => setShowSuccess(false));
+  };
+
+  // ─── Acciones ────────────────────────────────────────────────────────────────
+  const handleDeletePress = (apt: Appointment) => {
+    setAppointmentToDelete(apt);
+    setDeleteModalVisible(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!appointmentToDelete) return;
+
+    setAppointments(prev => {
+      const newAppointments = { ...prev };
+      Object.keys(newAppointments).forEach((key) => {
+        newAppointments[key as TabType] = newAppointments[key as TabType].filter(
+          a => a.id !== appointmentToDelete.id
+        );
+      });
+      const cancelledAppointment = { ...appointmentToDelete, status: 'cancelada' };
+      newAppointments.canceladas = [cancelledAppointment, ...newAppointments.canceladas];
+      return newAppointments;
+    });
+
+    setDeleteModalVisible(false);
+    showSuccessToast('Cita cancelada exitosamente');
     setAppointmentToDelete(null);
   };
 
@@ -294,10 +287,10 @@ export default function CitasScreen() {
     <SafeAreaView style={styles.safe}>
       {/* Mensaje de éxito animado */}
       {showSuccess && (
-        <Animated.View 
+        <Animated.View
           style={[
             styles.successMessage,
-            { 
+            {
               transform: [{ translateY: slideAnim }],
               opacity: fadeAnim
             }
@@ -306,22 +299,7 @@ export default function CitasScreen() {
           <View style={styles.successContent}>
             <Ionicons name="checkmark-circle" size={wp(24)} color="#4CAF50" />
             <Text style={styles.successText}>{successMessage}</Text>
-            <TouchableOpacity 
-              onPress={() => {
-                Animated.parallel([
-                  Animated.timing(slideAnim, {
-                    toValue: -100,
-                    duration: 300,
-                    useNativeDriver: true
-                  }),
-                  Animated.timing(fadeAnim, {
-                    toValue: 0,
-                    duration: 300,
-                    useNativeDriver: true
-                  })
-                ]).start(() => setShowSuccess(false));
-              }}
-            >
+            <TouchableOpacity onPress={hideSuccessToast}>
               <Ionicons name="close" size={wp(20)} color={Colors.textLight} />
             </TouchableOpacity>
           </View>
@@ -372,9 +350,9 @@ export default function CitasScreen() {
           currentAppointments.map((apt) => {
             const statusStyle = STATUS_COLORS[apt.status];
             return (
-              <TouchableOpacity 
-                key={apt.id} 
-                style={styles.citaCard} 
+              <TouchableOpacity
+                key={apt.id}
+                style={styles.citaCard}
                 activeOpacity={0.8}
               >
                 <View style={[styles.citaStripe, { backgroundColor: statusStyle.text }]} />
@@ -382,10 +360,10 @@ export default function CitasScreen() {
                 <View style={styles.citaContent}>
                   <View style={styles.citaTop}>
                     <View style={styles.proAvatar}>
-                      <MaterialCommunityIcons 
-                        name={getProfessionalIcon(apt.pro)} 
-                        size={wp(22)} 
-                        color={Colors.primary} 
+                      <MaterialCommunityIcons
+                        name={getProfessionalIcon(apt.pro)}
+                        size={wp(22)}
+                        color={Colors.primary}
                       />
                     </View>
                     <View style={styles.citaInfo}>
@@ -417,14 +395,14 @@ export default function CitasScreen() {
 
                   {tab === 'proximas' && (
                     <View style={styles.citaActions}>
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         style={styles.cancelBtn}
                         onPress={() => handleDeletePress(apt)}
                       >
                         <Ionicons name="close-outline" size={wp(16)} color={Colors.textMedium} />
                         <Text style={styles.cancelBtnText}>Cancelar</Text>
                       </TouchableOpacity>
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         style={styles.rescheduleBtn}
                         onPress={() => handleReschedule(apt)}
                       >
@@ -433,9 +411,10 @@ export default function CitasScreen() {
                       </TouchableOpacity>
                     </View>
                   )}
+
                   {tab === 'pasadas' && (
                     <View style={styles.citaActions}>
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         style={styles.bookAgainBtn}
                         onPress={() => handleBookAgain(apt)}
                       >
@@ -444,9 +423,10 @@ export default function CitasScreen() {
                       </TouchableOpacity>
                     </View>
                   )}
+
                   {tab === 'canceladas' && (
                     <View style={styles.citaActions}>
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         style={styles.deleteBtn}
                         onPress={() => {
                           Alert.alert(
@@ -454,8 +434,8 @@ export default function CitasScreen() {
                             '¿Estás seguro de eliminar esta cita del historial?',
                             [
                               { text: 'Cancelar', style: 'cancel' },
-                              { 
-                                text: 'Eliminar', 
+                              {
+                                text: 'Eliminar',
                                 style: 'destructive',
                                 onPress: () => {
                                   setAppointments(prev => {
@@ -465,36 +445,7 @@ export default function CitasScreen() {
                                     );
                                     return newAppointments;
                                   });
-                                  
-                                  setSuccessMessage('Cita eliminada permanentemente');
-                                  setShowSuccess(true);
-                                  
-                                  Animated.parallel([
-                                    Animated.spring(slideAnim, {
-                                      toValue: 0,
-                                      useNativeDriver: true,
-                                    }),
-                                    Animated.timing(fadeAnim, {
-                                      toValue: 1,
-                                      duration: 300,
-                                      useNativeDriver: true
-                                    })
-                                  ]).start();
-                                  
-                                  setTimeout(() => {
-                                    Animated.parallel([
-                                      Animated.timing(slideAnim, {
-                                        toValue: -100,
-                                        duration: 300,
-                                        useNativeDriver: true
-                                      }),
-                                      Animated.timing(fadeAnim, {
-                                        toValue: 0,
-                                        duration: 300,
-                                        useNativeDriver: true
-                                      })
-                                    ]).start(() => setShowSuccess(false));
-                                  }, 3000);
+                                  showSuccessToast('Cita eliminada permanentemente');
                                 }
                               }
                             ]
@@ -526,9 +477,9 @@ export default function CitasScreen() {
             <View style={styles.modalIcon}>
               <Ionicons name="warning-outline" size={wp(48)} color={Colors.error} />
             </View>
-            
+
             <Text style={styles.modalTitle}>¿Cancelar esta cita?</Text>
-            
+
             {appointmentToDelete && (
               <View style={styles.modalAppointmentInfo}>
                 <Text style={styles.modalProName}>{appointmentToDelete.pro}</Text>
@@ -541,21 +492,21 @@ export default function CitasScreen() {
                 </View>
               </View>
             )}
-            
+
             <Text style={styles.modalDescription}>
-              Al cancelar, la cita se moverá a la sección de canceladas. 
+              Al cancelar, la cita se moverá a la sección de canceladas.
               ¿Deseas continuar?
             </Text>
 
             <View style={styles.modalActions}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.modalCancelBtn}
                 onPress={handleCancelDelete}
               >
                 <Text style={styles.modalCancelBtnText}>No, mantener</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
+
+              <TouchableOpacity
                 style={styles.modalConfirmBtn}
                 onPress={handleConfirmDelete}
               >
@@ -570,11 +521,11 @@ export default function CitasScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { 
-    flex: 1, 
-    backgroundColor: Colors.background 
+  safe: {
+    flex: 1,
+    backgroundColor: Colors.background
   },
-  
+
   successMessage: {
     position: 'absolute',
     top: Platform.OS === 'ios' ? hp(60) : hp(20),
@@ -603,244 +554,245 @@ const styles = StyleSheet.create({
     color: Colors.textDark,
     fontWeight: '500',
   },
-  
+
   header: {
-    flexDirection: 'row', 
-    alignItems: 'center', 
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: Spacing.lg, 
-    paddingTop: Spacing.md, 
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.md,
     paddingBottom: Spacing.sm,
   },
-  pageTitle: { 
-    fontSize: FontSize.xxxl, 
-    fontWeight: '700', 
-    color: Colors.textDark 
+  pageTitle: {
+    fontSize: FontSize.xxxl,
+    fontWeight: '700',
+    color: Colors.textDark
   },
   newCitaBtn: {
-    width: wp(40), 
-    height: wp(40), 
+    width: wp(40),
+    height: wp(40),
     borderRadius: wp(20),
-    backgroundColor: Colors.primary, 
-    alignItems: 'center', 
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: Colors.primary, 
-    shadowOpacity: 0.3, 
+    shadowColor: Colors.primary,
+    shadowOpacity: 0.3,
     shadowRadius: wp(8),
-    shadowOffset: { width: 0, height: hp(3) }, 
+    shadowOffset: { width: 0, height: hp(3) },
     elevation: 4,
   },
-  
+
   tabsRow: {
-    flexDirection: 'row', 
-    borderBottomWidth: 1, 
+    flexDirection: 'row',
+    borderBottomWidth: 1,
     borderBottomColor: Colors.borderLight,
     marginHorizontal: Spacing.lg,
   },
   tabBtn: {
-    flex: 1, 
-    paddingVertical: hp(12), 
-    alignItems: 'center', 
+    flex: 1,
+    paddingVertical: hp(12),
+    alignItems: 'center',
     position: 'relative',
   },
-  tabBtnText: { 
-    fontSize: FontSize.sm, 
-    color: Colors.textLight, 
-    fontWeight: '500' 
+  tabBtnText: {
+    fontSize: FontSize.sm,
+    color: Colors.textLight,
+    fontWeight: '500'
   },
-  tabBtnTextActive: { 
-    color: Colors.primary, 
-    fontWeight: '700' 
+  tabBtnActive: {},
+  tabBtnTextActive: {
+    color: Colors.primary,
+    fontWeight: '700'
   },
   tabIndicator: {
-    position: 'absolute', 
-    bottom: 0, 
-    left: '10%', 
+    position: 'absolute',
+    bottom: 0,
+    left: '10%',
     right: '10%',
-    height: hp(3), 
-    backgroundColor: Colors.primary, 
+    height: hp(3),
+    backgroundColor: Colors.primary,
     borderRadius: hp(2),
   },
-  
-  scroll: { 
-    paddingHorizontal: Spacing.lg, 
-    paddingTop: Spacing.md 
+
+  scroll: {
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.md
   },
-  
+
   citaCard: {
-    flexDirection: 'row', 
+    flexDirection: 'row',
     backgroundColor: Colors.white,
-    borderRadius: Radius.lg, 
-    marginBottom: Spacing.md, 
+    borderRadius: Radius.lg,
+    marginBottom: Spacing.md,
     overflow: 'hidden',
-    shadowColor: '#000', 
-    shadowOpacity: 0.05, 
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
     shadowRadius: wp(10),
-    shadowOffset: { width: 0, height: hp(2) }, 
+    shadowOffset: { width: 0, height: hp(2) },
     elevation: 2,
   },
-  citaStripe: { 
-    width: wp(4) 
+  citaStripe: {
+    width: wp(4)
   },
-  citaContent: { 
-    flex: 1, 
-    padding: Spacing.md 
+  citaContent: {
+    flex: 1,
+    padding: Spacing.md
   },
   citaTop: {
-    flexDirection: 'row', 
+    flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: Spacing.sm, 
+    gap: Spacing.sm,
     marginBottom: Spacing.md,
   },
   proAvatar: {
-    width: wp(44), 
-    height: wp(44), 
+    width: wp(44),
+    height: wp(44),
     borderRadius: wp(12),
-    backgroundColor: Colors.primaryLight, 
-    alignItems: 'center', 
+    backgroundColor: Colors.primaryLight,
+    alignItems: 'center',
     justifyContent: 'center',
   },
-  citaInfo: { 
-    flex: 1 
+  citaInfo: {
+    flex: 1
   },
-  citaProName: { 
-    fontSize: FontSize.sm, 
-    fontWeight: '700', 
-    color: Colors.textDark, 
-    marginBottom: hp(2) 
+  citaProName: {
+    fontSize: FontSize.sm,
+    fontWeight: '700',
+    color: Colors.textDark,
+    marginBottom: hp(2)
   },
-  citaService: { 
-    fontSize: FontSize.xs, 
-    color: Colors.textMedium 
+  citaService: {
+    fontSize: FontSize.xs,
+    color: Colors.textMedium
   },
-  statusBadge: { 
-    paddingHorizontal: wp(8), 
-    paddingVertical: hp(4), 
-    borderRadius: Radius.full 
+  statusBadge: {
+    paddingHorizontal: wp(8),
+    paddingVertical: hp(4),
+    borderRadius: Radius.full
   },
-  statusText: { 
-    fontSize: wp(10), 
-    fontWeight: '700' 
+  statusText: {
+    fontSize: wp(10),
+    fontWeight: '700'
   },
-  
+
   citaDetails: {
-    flexDirection: 'row', 
+    flexDirection: 'row',
     alignItems: 'center',
-    flexWrap: 'wrap', 
-    gap: Spacing.sm, 
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
     marginBottom: Spacing.sm,
   },
-  detailItem: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    gap: wp(4) 
+  detailItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: wp(4)
   },
-  detailText: { 
-    fontSize: FontSize.xs, 
-    color: Colors.textMedium 
+  detailText: {
+    fontSize: FontSize.xs,
+    color: Colors.textMedium
   },
-  citaPrice: { 
-    marginLeft: 'auto', 
-    fontSize: FontSize.sm, 
-    fontWeight: '700', 
-    color: Colors.primary 
+  citaPrice: {
+    marginLeft: 'auto',
+    fontSize: FontSize.sm,
+    fontWeight: '700',
+    color: Colors.primary
   },
-  
-  citaActions: { 
-    flexDirection: 'row', 
-    gap: Spacing.sm, 
-    marginTop: Spacing.sm 
+
+  citaActions: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    marginTop: Spacing.sm
   },
   cancelBtn: {
-    flex: 1, 
-    height: hp(36), 
+    flex: 1,
+    height: hp(36),
     borderRadius: Radius.full,
-    borderWidth: 1.5, 
+    borderWidth: 1.5,
     borderColor: Colors.borderLight,
-    alignItems: 'center', 
+    alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
     gap: wp(4),
   },
-  cancelBtnText: { 
-    fontSize: FontSize.xs, 
-    color: Colors.textMedium, 
-    fontWeight: '600' 
+  cancelBtnText: {
+    fontSize: FontSize.xs,
+    color: Colors.textMedium,
+    fontWeight: '600'
   },
   rescheduleBtn: {
-    flex: 1, 
-    height: hp(36), 
+    flex: 1,
+    height: hp(36),
     borderRadius: Radius.full,
-    backgroundColor: Colors.primary, 
-    alignItems: 'center', 
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
     gap: wp(4),
   },
-  rescheduleBtnText: { 
-    fontSize: FontSize.xs, 
-    color: Colors.white, 
-    fontWeight: '700' 
+  rescheduleBtnText: {
+    fontSize: FontSize.xs,
+    color: Colors.white,
+    fontWeight: '700'
   },
   bookAgainBtn: {
-    flex: 1, 
-    height: hp(36), 
+    flex: 1,
+    height: hp(36),
     borderRadius: Radius.full,
-    backgroundColor: Colors.primaryLight, 
-    alignItems: 'center', 
+    backgroundColor: Colors.primaryLight,
+    alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
     gap: wp(4),
   },
-  bookAgainBtnText: { 
-    fontSize: FontSize.xs, 
-    color: Colors.primary, 
-    fontWeight: '700' 
+  bookAgainBtnText: {
+    fontSize: FontSize.xs,
+    color: Colors.primary,
+    fontWeight: '700'
   },
   deleteBtn: {
-    flex: 1, 
-    height: hp(36), 
+    flex: 1,
+    height: hp(36),
     borderRadius: Radius.full,
-    borderWidth: 1.5, 
+    borderWidth: 1.5,
     borderColor: Colors.error,
-    alignItems: 'center', 
+    alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
     gap: wp(4),
   },
-  deleteBtnText: { 
-    fontSize: FontSize.xs, 
-    color: Colors.error, 
-    fontWeight: '600' 
+  deleteBtnText: {
+    fontSize: FontSize.xs,
+    color: Colors.error,
+    fontWeight: '600'
   },
-  
-  emptyState: { 
-    alignItems: 'center', 
-    paddingTop: hp(64) 
+
+  emptyState: {
+    alignItems: 'center',
+    paddingTop: hp(64)
   },
-  emptyTitle: { 
-    fontSize: FontSize.xl, 
-    fontWeight: '700', 
-    color: Colors.textDark, 
-    marginBottom: Spacing.sm 
+  emptyTitle: {
+    fontSize: FontSize.xl,
+    fontWeight: '700',
+    color: Colors.textDark,
+    marginBottom: Spacing.sm
   },
-  emptySubtitle: { 
-    fontSize: FontSize.sm, 
-    color: Colors.textMedium, 
-    marginBottom: Spacing.xl 
+  emptySubtitle: {
+    fontSize: FontSize.sm,
+    color: Colors.textMedium,
+    marginBottom: Spacing.xl
   },
   emptyBtn: {
-    backgroundColor: Colors.primary, 
+    backgroundColor: Colors.primary,
     borderRadius: Radius.full,
-    paddingHorizontal: Spacing.xl, 
+    paddingHorizontal: Spacing.xl,
     paddingVertical: hp(14),
   },
-  emptyBtnText: { 
-    color: Colors.white, 
-    fontSize: FontSize.md, 
-    fontWeight: '600' 
+  emptyBtnText: {
+    color: Colors.white,
+    fontSize: FontSize.md,
+    fontWeight: '600'
   },
-  
+
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
