@@ -137,6 +137,28 @@ CREATE TABLE resenas (
 );
 
 -- =====================================================
+-- TABLA: especialidades
+-- =====================================================
+CREATE TABLE especialidades (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    nombre VARCHAR(100) NOT NULL UNIQUE,
+    descripcion TEXT,
+    activo BOOLEAN DEFAULT true,
+    creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =====================================================
+-- Tabla intermedia para relación muchos a muchos entre veterinarios y especialidades
+-- =====================================================
+CREATE TABLE veterinario_especialidades (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    veterinario_id UUID NOT NULL REFERENCES veterinarios(id) ON DELETE CASCADE,
+    especialidad_id UUID NOT NULL REFERENCES especialidades(id) ON DELETE CASCADE,
+    creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(veterinario_id, especialidad_id)
+);
+
+-- =====================================================
 -- ÍNDICES
 -- =====================================================
 CREATE INDEX idx_mascotas_usuario_id ON mascotas(usuario_id);

@@ -78,27 +78,48 @@ export default function LoginScreen() {
     return isValid;
   };
 
-  const handleLogin = async () => {
-    if (!validateForm()) return;
-    
-    setLoading(true);
-    await new Promise((r) => setTimeout(r, 1500));
-    setLoading(false);
+const API_URL = 'http://192.168.0.13:3000';
 
-    // Dinámica para identificar el rol según el correo (Simulado)
-    // En una app real, esto vendría de la respuesta de tu API de autenticación
-    const emailLower = email.toLowerCase();
+const handleLogin = async () => {
+  if (!validateForm()) return;
+
+  try {
+    setLoading(true);
+
+    const response = await fetch(`${API_URL}/api/usuarios/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        correo: email,
+        contrasena: password,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Error al iniciar sesión');
+    }
+
+    console.log('Usuario logueado:', data);
+
+        const emailLower = email.toLowerCase();
     
     if (emailLower.includes('pro')) {
       // Es una cuenta profesional
       router.replace('/profesional/(tabs)/inicio');
     } else {
-      // Es una cuenta de cliente
-      // router.replace('/cliente/(tabs)/inicio');
-      // Por ahora redirigimos a una ruta existente o mostramos alerta si no existe
-      alert('Login como Cliente (Ruta /cliente no implementada aún)');
+      router.replace('/cliente/(tabs)/home');
     }
-  };
+
+  } catch (error: any) {
+    alert(error.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const closeSuccessMessage = () => {
     Animated.timing(slideAnim, {

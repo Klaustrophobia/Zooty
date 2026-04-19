@@ -8,13 +8,14 @@ import { Servicio } from "@/entities/Servicio";
 import { Cita } from "@/entities/Cita";
 import { Pago } from "@/entities/Pago";
 import { Resena } from "@/entities/Resena";
+import { Especialidad } from '@/entities/Especialidad';
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
   host: process.env.DB_HOST || 'localhost',
   port: Number(process.env.DB_PORT) || 5432,
-  username: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASS || 'oracle',
+  username: process.env.DB_USER || 'soporte',
+  password: process.env.DB_PASS || 'password',
   database: process.env.DB_NAME || 'zooty_db',
   synchronize: false,
   entities: [
@@ -25,7 +26,8 @@ export const AppDataSource = new DataSource({
     Servicio,
     Cita,
     Pago,
-    Resena
+    Resena,
+    Especialidad
   ],
   logging: ["error", "warn"],
   extra: {

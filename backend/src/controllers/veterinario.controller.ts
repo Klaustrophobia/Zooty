@@ -8,18 +8,29 @@ export class VeterinarioController {
     this.veterinarioService = new VeterinarioService();
   }
 
-  async getAllVeterinarios(request: NextRequest) {
-    try {
-      const veterinarios = await this.veterinarioService.getAllVeterinarios();
-      return NextResponse.json(veterinarios);
-    } catch (error) {
-      console.error("Error en VeterinarioController.getAllVeterinarios:", error);
-      return NextResponse.json(
-        { error: "Error interno del servidor" },
-        { status: 500 }
-      );
-    }
+async getAllVeterinarios(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+
+    const latParam = searchParams.get("latitud");
+    const lngParam = searchParams.get("longitud");
+
+    const lat = latParam ? parseFloat(latParam) : undefined;
+    const lng = lngParam ? parseFloat(lngParam) : undefined;
+
+    const veterinarios =
+      await this.veterinarioService.getAllVeterinarios(lat, lng);
+
+    return NextResponse.json(veterinarios);
+
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json(
+      { error: "Error interno del servidor" },
+      { status: 500 }
+    );
   }
+}
 
   async createVeterinario(request: NextRequest) {
     try {

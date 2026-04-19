@@ -49,3 +49,13 @@ export interface VeterinariosCercanosDTO {
   longitud: number;
   radio_km?: number;
 }
+
+export interface VeterinarioDTO {
+  id: string;
+  nombre_negocio: string;
+  promedio_calificacion: number;
+  specialty: string;
+  latitud: number | null;
+  longitud: number | null;
+  distance?: string | null;
+}

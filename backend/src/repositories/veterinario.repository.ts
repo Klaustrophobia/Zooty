@@ -19,18 +19,29 @@ export class VeterinarioRepository {
     return await this.repository.save(veterinario);
   }
 
-  async findAll(): Promise<Veterinario[]> {
-    await this.initialize();
-    return await this.repository.find({
-      where: { activo: true },
-      order: { creado_en: "DESC" }
-    });
-  }
+async findAll(): Promise<Veterinario[]> {
+  await this.initialize();
+
+  return await this.repository.find({
+    where: { activo: true },
+    relations: ["especialidades"], // OK
+    select: {
+      id: true,
+      nombre_negocio: true,
+      promedio_calificacion: true,
+      latitud: true,
+      longitud: true,
+      especialidades: true
+    }, // 🔥 fuerza limpieza
+    order: { creado_en: "DESC" }
+  });
+}
 
   async findById(id: string): Promise<Veterinario | null> {
     await this.initialize();
     return await this.repository.findOne({
-      where: { id }
+      where: { id },
+      relations: ["especialidades"]
     });
   }
 

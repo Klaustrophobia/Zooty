@@ -126,7 +126,7 @@ export default function BuscarScreen() {
   const getProfessionalIcon = (specialty: string) => {
     if (specialty.includes('Veterinario')) return 'medical-bag';
     if (specialty.includes('Paseadora')) return 'walk';
-    if (specialty.includes('Peluquería')) return 'scissors';
+    if (specialty.includes('Peluquería')) return 'content-cut';
     return 'paw';
   };
 
