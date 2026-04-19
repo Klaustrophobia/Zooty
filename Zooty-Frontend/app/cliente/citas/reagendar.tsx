@@ -7,9 +7,8 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Colors, Spacing, Radius, FontSize } from '@/constants/theme';
 import { wp, hp } from '@/constants/Responsive';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import PrimaryButton from '@/components/PrimaryButton';
-import StepBar from '@/components/StepBar';
 
 // Datos mock para fechas
 const generateDates = () => {
@@ -39,53 +38,86 @@ const TIME_SLOTS = [
   '18:00', '18:30', '19:00', '19:30', '20:00',
 ];
 
-export default function AgendarCitaScreen() {
+export default function ReagendarCitaScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const professionalId = params.pro as string;
+  
+  // Datos de la cita original
+  const appointmentId = params.id as string;
+  const professionalName = params.pro as string || 'Clinivet Dr. García';
+  const serviceName = params.service as string || 'Consulta Veterinaria';
+  const petName = params.pet as string || 'Max';
+  const originalDate = params.originalDate as string || '6 Oct';
+  const originalTime = params.originalTime as string || '12:00 PM';
+  const originalPrice = params.price as string || '47.50';
   
   const [selectedDate, setSelectedDate] = useState<number | null>(0);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
-  const [selectedPet, setSelectedPet] = useState<string | null>(null);
-  const [notes, setNotes] = useState('');
+  const [reason, setReason] = useState('');
+  const [additionalNotes, setAdditionalNotes] = useState('');
+  const [loading, setLoading] = useState(false);
   
   const dates = generateDates();
   
-  // Mock de mascotas
-  const PETS = [
-    { id: '1', name: 'Luna', type: 'Perro' },
-    { id: '2', name: 'Max', type: 'Perro' },
-    { id: '3', name: 'Mia', type: 'Gato' },
+  // Razones predefinidas para reagendar
+  const REASONS = [
+    'Conflicto de horario',
+    'Emergencia personal',
+    'La mascota no está disponible',
+    'Prefiero otro horario',
+    'Otro motivo',
   ];
 
-  const handleContinue = () => {
+  const handleReagendar = async () => {
     if (!selectedDate && selectedDate !== 0) {
-      Alert.alert('Error', 'Selecciona una fecha para tu cita');
+      Alert.alert('Error', 'Selecciona una nueva fecha para tu cita');
       return;
     }
     if (!selectedTime) {
-      Alert.alert('Error', 'Selecciona un horario disponible');
-      return;
-    }
-    if (!selectedPet) {
-      Alert.alert('Error', 'Selecciona la mascota para la cita');
+      Alert.alert('Error', 'Selecciona un nuevo horario disponible');
       return;
     }
     
-    const selectedDateObj = dates[selectedDate];
+    setLoading(true);
     
-    router.push({
-      pathname: '/cliente/citas/pago',
+    // Simular proceso de reagendamiento
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    setLoading(false);
+    
+    // Obtener la nueva fecha formateada
+    const newDate = dates[selectedDate];
+    const formattedNewDate = `${newDate.date} ${newDate.month}`;
+    
+    // Crear objeto con la cita actualizada
+    const updatedAppointment = {
+      id: appointmentId,
+      pro: professionalName,
+      service: serviceName,
+      pet: petName,
+      date: formattedNewDate,
+      time: selectedTime,
+      status: 'confirmada',
+      price: parseFloat(originalPrice),
+    };
+    
+    // Navegar de vuelta a citas con los datos actualizados
+    router.replace({
+      pathname: '/cliente/(tabs)/citas',
       params: {
-        pro: professionalId,
-        date: selectedDateObj.fullDate.toISOString(),
-        time: selectedTime,
-        pet: selectedPet,
-        notes: notes,
-        serviceName: 'Consulta Veterinaria',
-        servicePrice: '45.00',
+        updatedAppointment: JSON.stringify(updatedAppointment),
+        showSuccessMessage: 'true',
+        successType: 'reschedule',
       }
     });
+  };
+
+  const getProfessionalIcon = (name: string) => {
+    if (name.includes('Veterinario') || name.includes('Dr.')) return 'medical-bag';
+    if (name.includes('Paseos')) return 'walk';
+    if (name.includes('Spa') || name.includes('Peluquería')) return 'scissors';
+    if (name.includes('Guardería')) return 'home';
+    return 'paw';
   };
 
   return (
@@ -99,32 +131,59 @@ export default function AgendarCitaScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={wp(22)} color={Colors.textDark} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Agendar cita</Text>
+          <Text style={styles.headerTitle}>Reagendar cita</Text>
           <View style={styles.placeholder} />
         </View>
 
-        <StepBar total={3} current={1} />
-
-        {/* Información del profesional */}
-        <View style={styles.proCard}>
-          <View style={styles.proAvatar}>
-            <Text style={styles.proAvatarText}>C</Text>
-          </View>
-          <View style={styles.proInfo}>
-            <Text style={styles.proName}>Clinivet Dr. García</Text>
-            <Text style={styles.proSpecialty}>Medicina General</Text>
-            <View style={styles.proRating}>
-              <Ionicons name="star" size={wp(14)} color="#F4A536" />
-              <Text style={styles.ratingText}>4.9</Text>
-              <Text style={styles.dot}>•</Text>
-              <Ionicons name="location-outline" size={wp(14)} color={Colors.textLight} />
-              <Text style={styles.distanceText}>0.8 km</Text>
+        {/* Información de la cita original */}
+        <View style={styles.originalCard}>
+          <Text style={styles.originalLabel}>Cita original</Text>
+          
+          <View style={styles.proSection}>
+            <View style={styles.proAvatar}>
+              <MaterialCommunityIcons 
+                name={getProfessionalIcon(professionalName)} 
+                size={wp(24)} 
+                color={Colors.primary} 
+              />
             </View>
+            <View style={styles.proInfo}>
+              <Text style={styles.proName}>{professionalName}</Text>
+              <Text style={styles.proService}>{serviceName}</Text>
+            </View>
+          </View>
+
+          <View style={styles.divider} />
+
+          <View style={styles.originalDetails}>
+            <View style={styles.detailRow}>
+              <Ionicons name="calendar-outline" size={wp(16)} color={Colors.textMedium} />
+              <Text style={styles.detailText}>{originalDate}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Ionicons name="time-outline" size={wp(16)} color={Colors.textMedium} />
+              <Text style={styles.detailText}>{originalTime}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <MaterialCommunityIcons name="paw" size={wp(16)} color={Colors.textMedium} />
+              <Text style={styles.detailText}>{petName}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Ionicons name="cash-outline" size={wp(16)} color={Colors.textMedium} />
+              <Text style={styles.detailText}>${originalPrice}</Text>
+            </View>
+          </View>
+
+          <View style={styles.warningBox}>
+            <Ionicons name="information-circle-outline" size={wp(18)} color="#F59E0B" />
+            <Text style={styles.warningText}>
+              Al reagendar, se mantendrá el mismo precio y profesional.
+            </Text>
           </View>
         </View>
 
-        {/* Selección de fecha */}
-        <Text style={styles.sectionTitle}>Selecciona una fecha</Text>
+        {/* Selección de nueva fecha */}
+        <Text style={styles.sectionTitle}>Selecciona una nueva fecha</Text>
         <ScrollView 
           horizontal 
           showsHorizontalScrollIndicator={false}
@@ -155,9 +214,9 @@ export default function AgendarCitaScreen() {
           ))}
         </ScrollView>
 
-        {/* Selección de hora - MEJORADO */}
+        {/* Selección de nueva hora */}
         <View style={styles.timeSectionHeader}>
-          <Text style={styles.sectionTitle}>Horarios disponibles</Text>
+          <Text style={styles.sectionTitle}>Nuevo horario</Text>
           <View style={styles.timeLegend}>
             <View style={styles.legendItem}>
               <View style={[styles.legendDot, { backgroundColor: Colors.primary }]} />
@@ -181,8 +240,6 @@ export default function AgendarCitaScreen() {
                 style={[
                   styles.timeSlot,
                   selectedTime === time && styles.timeSlotSelected,
-                  !isMorning && !selectedTime && styles.timeSlotAfternoon,
-                  selectedTime === time && styles.timeSlotSelected
                 ]}
                 onPress={() => setSelectedTime(time)}
               >
@@ -206,60 +263,82 @@ export default function AgendarCitaScreen() {
           })}
         </View>
 
-        {/* Selección de mascota */}
-        <Text style={styles.sectionTitle}>Mascota para la cita</Text>
-        <View style={styles.petsContainer}>
-          {PETS.map((pet) => (
+        {/* Motivo del reagendamiento */}
+        <Text style={styles.sectionTitle}>Motivo del cambio</Text>
+        <View style={styles.reasonsContainer}>
+          {REASONS.map((reasonOption) => (
             <TouchableOpacity
-              key={pet.id}
+              key={reasonOption}
               style={[
-                styles.petCard,
-                selectedPet === pet.id && styles.petCardSelected
+                styles.reasonChip,
+                reason === reasonOption && styles.reasonChipSelected
               ]}
-              onPress={() => setSelectedPet(pet.id)}
+              onPress={() => setReason(reasonOption)}
             >
-              <View style={[
-                styles.petAvatar,
-                selectedPet === pet.id && styles.petAvatarSelected
-              ]}>
-                <Text style={[
-                  styles.petAvatarText,
-                  selectedPet === pet.id && styles.petAvatarTextSelected
-                ]}>{pet.name.charAt(0)}</Text>
-              </View>
               <Text style={[
-                styles.petName,
-                selectedPet === pet.id && styles.petNameSelected
-              ]}>{pet.name}</Text>
-              <Text style={styles.petType}>{pet.type}</Text>
+                styles.reasonChipText,
+                reason === reasonOption && styles.reasonChipTextSelected
+              ]}>{reasonOption}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
         {/* Notas adicionales */}
-        <Text style={styles.sectionTitle}>Notas adicionales</Text>
-        <View style={styles.notesContainer}>
-          <TextInput
-            style={styles.notesInput}
-            placeholder="Ej: Mi perro es nervioso, necesita corte específico..."
-            placeholderTextColor={Colors.placeholder}
-            value={notes}
-            onChangeText={setNotes}
-            multiline
-            numberOfLines={3}
-            textAlignVertical="top"
-          />
-        </View>
+        {reason === 'Otro motivo' && (
+          <>
+            <Text style={styles.sectionTitle}>Especifica el motivo</Text>
+            <View style={styles.notesContainer}>
+              <TextInput
+                style={styles.notesInput}
+                placeholder="Explica brevemente el motivo..."
+                placeholderTextColor={Colors.placeholder}
+                value={additionalNotes}
+                onChangeText={setAdditionalNotes}
+                multiline
+                numberOfLines={2}
+                textAlignVertical="top"
+              />
+            </View>
+          </>
+        )}
+
+        {/* Resumen del cambio */}
+        {selectedDate !== null && selectedTime && (
+          <View style={styles.summaryCard}>
+            <Text style={styles.summaryTitle}>Resumen del cambio</Text>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Fecha original</Text>
+              <Text style={styles.summaryOldValue}>{originalDate} • {originalTime}</Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Nueva fecha</Text>
+              <Text style={styles.summaryNewValue}>
+                {dates[selectedDate].date} {dates[selectedDate].month} • {selectedTime}
+              </Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Precio</Text>
+              <Text style={styles.summaryPrice}>${originalPrice}</Text>
+            </View>
+          </View>
+        )}
 
         <View style={styles.spacer} />
       </ScrollView>
 
-      {/* Botón continuar */}
+      {/* Botón confirmar */}
       <View style={styles.bottomBar}>
         <PrimaryButton 
-          label="Continuar al pago" 
-          onPress={handleContinue}
+          label={loading ? "Procesando..." : "Confirmar reagendamiento"} 
+          onPress={handleReagendar}
+          disabled={loading}
         />
+        <TouchableOpacity 
+          style={styles.cancelLink}
+          onPress={() => router.back()}
+        >
+          <Text style={styles.cancelLinkText}>Cancelar y volver</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -291,28 +370,35 @@ const styles = StyleSheet.create({
   },
   placeholder: { width: wp(40) },
   
-  proCard: {
-    flexDirection: 'row',
+  originalCard: {
     backgroundColor: Colors.white,
     borderRadius: Radius.lg,
-    padding: Spacing.md,
-    marginTop: Spacing.lg,
+    padding: Spacing.lg,
     marginBottom: Spacing.xl,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+  },
+  originalLabel: {
+    fontSize: FontSize.xs,
+    fontWeight: '600',
+    color: Colors.textLight,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: Spacing.md,
+  },
+  proSection: {
+    flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.md,
+    marginBottom: Spacing.md,
   },
   proAvatar: {
-    width: wp(60),
-    height: wp(60),
-    borderRadius: wp(16),
+    width: wp(50),
+    height: wp(50),
+    borderRadius: wp(14),
     backgroundColor: Colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  proAvatarText: {
-    fontSize: wp(26),
-    fontWeight: '600',
-    color: Colors.primary,
   },
   proInfo: { flex: 1 },
   proName: {
@@ -321,29 +407,40 @@ const styles = StyleSheet.create({
     color: Colors.textDark,
     marginBottom: hp(2),
   },
-  proSpecialty: {
+  proService: {
     fontSize: FontSize.sm,
     color: Colors.textMedium,
-    marginBottom: hp(4),
   },
-  proRating: {
+  divider: {
+    height: 1,
+    backgroundColor: Colors.borderLight,
+    marginVertical: Spacing.md,
+  },
+  originalDetails: {
+    gap: Spacing.sm,
+  },
+  detailRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: wp(4),
+    gap: Spacing.sm,
   },
-  ratingText: {
-    fontSize: FontSize.xs,
-    fontWeight: '600',
+  detailText: {
+    fontSize: FontSize.sm,
     color: Colors.textDark,
   },
-  dot: {
-    fontSize: FontSize.xs,
-    color: Colors.textLight,
-    marginHorizontal: wp(2),
+  warningBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF8E1',
+    borderRadius: Radius.md,
+    padding: Spacing.sm,
+    marginTop: Spacing.md,
+    gap: Spacing.sm,
   },
-  distanceText: {
+  warningText: {
+    flex: 1,
     fontSize: FontSize.xs,
-    color: Colors.textLight,
+    color: '#92400E',
   },
   
   sectionTitle: {
@@ -391,7 +488,6 @@ const styles = StyleSheet.create({
     color: Colors.white,
   },
   
-  // Sección de horarios mejorada
   timeSectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -433,23 +529,10 @@ const styles = StyleSheet.create({
     borderColor: Colors.borderLight,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.03,
-    shadowRadius: wp(4),
-    shadowOffset: { width: 0, height: hp(1) },
-    elevation: 1,
-  },
-  timeSlotAfternoon: {
-    borderColor: '#FFF0EB',
   },
   timeSlotSelected: {
     backgroundColor: Colors.primary,
     borderColor: Colors.primary,
-    shadowColor: Colors.primary,
-    shadowOpacity: 0.15,
-    shadowRadius: wp(8),
-    shadowOffset: { width: 0, height: hp(3) },
-    elevation: 3,
   },
   timeText: {
     fontSize: wp(16),
@@ -466,55 +549,30 @@ const styles = StyleSheet.create({
     color: Colors.white,
   },
   
-  petsContainer: {
+  reasonsContainer: {
     flexDirection: 'row',
-    gap: Spacing.md,
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
   },
-  petCard: {
-    flex: 1,
+  reasonChip: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: hp(10),
     backgroundColor: Colors.white,
-    borderRadius: Radius.lg,
-    padding: Spacing.md,
-    alignItems: 'center',
+    borderRadius: Radius.full,
     borderWidth: 1.5,
     borderColor: Colors.borderLight,
   },
-  petCardSelected: {
-    borderColor: Colors.primary,
-    backgroundColor: '#F0FAF8',
-  },
-  petAvatar: {
-    width: wp(50),
-    height: wp(50),
-    borderRadius: wp(25),
-    backgroundColor: Colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: hp(8),
-  },
-  petAvatarSelected: {
+  reasonChipSelected: {
     backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
   },
-  petAvatarText: {
-    fontSize: wp(22),
-    fontWeight: '600',
-    color: Colors.primary,
-  },
-  petAvatarTextSelected: {
-    color: Colors.white,
-  },
-  petName: {
+  reasonChipText: {
     fontSize: FontSize.sm,
-    fontWeight: '600',
     color: Colors.textDark,
-    marginBottom: hp(2),
   },
-  petNameSelected: {
-    color: Colors.primary,
-  },
-  petType: {
-    fontSize: FontSize.xs,
-    color: Colors.textLight,
+  reasonChipTextSelected: {
+    color: Colors.white,
+    fontWeight: '600',
   },
   
   notesContainer: {
@@ -527,8 +585,48 @@ const styles = StyleSheet.create({
   notesInput: {
     fontSize: FontSize.sm,
     color: Colors.textDark,
-    minHeight: hp(80),
+    minHeight: hp(50),
     padding: 0,
+  },
+  
+  summaryCard: {
+    backgroundColor: '#F0FAF8',
+    borderRadius: Radius.lg,
+    padding: Spacing.lg,
+    marginTop: Spacing.xl,
+    borderWidth: 1,
+    borderColor: Colors.primaryLight,
+  },
+  summaryTitle: {
+    fontSize: FontSize.sm,
+    fontWeight: '700',
+    color: Colors.primary,
+    marginBottom: Spacing.md,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: hp(8),
+  },
+  summaryLabel: {
+    fontSize: FontSize.sm,
+    color: Colors.textMedium,
+  },
+  summaryOldValue: {
+    fontSize: FontSize.sm,
+    color: Colors.textLight,
+    textDecorationLine: 'line-through',
+  },
+  summaryNewValue: {
+    fontSize: FontSize.md,
+    fontWeight: '700',
+    color: Colors.primary,
+  },
+  summaryPrice: {
+    fontSize: FontSize.md,
+    fontWeight: '700',
+    color: Colors.textDark,
   },
   
   spacer: { height: hp(20) },
@@ -540,5 +638,14 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderTopWidth: 1,
     borderTopColor: Colors.borderLight,
+  },
+  cancelLink: {
+    alignItems: 'center',
+    paddingVertical: Spacing.md,
+  },
+  cancelLinkText: {
+    fontSize: FontSize.sm,
+    color: Colors.textMedium,
+    fontWeight: '500',
   },
 });
