@@ -1,4 +1,16 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from "typeorm";
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from "typeorm";
+import { Usuario } from "./Usuario";
+import { Mascota } from "./Mascota";
+import { Servicio } from "./Servicio";
+import { Veterinario } from "./Veterinario";
 
 @Entity("citas")
 export class Cita {
@@ -29,7 +41,12 @@ export class Cita {
   @Column({ name: "monto_total", type: "decimal", precision: 10, scale: 2 })
   monto_total!: number;
 
-  @Column({ name: "estado_pago", type: "varchar", length: 50, default: "pendiente" })
+  @Column({
+    name: "estado_pago",
+    type: "varchar",
+    length: 50,
+    default: "pendiente",
+  })
   estado_pago!: string;
 
   @CreateDateColumn({ name: "creado_en", type: "timestamp" })
@@ -37,4 +54,20 @@ export class Cita {
 
   @UpdateDateColumn({ name: "actualizado_en", type: "timestamp" })
   actualizado_en!: Date;
+
+  @ManyToOne(() => Usuario)
+  @JoinColumn({ name: "usuario_id" })
+  usuario!: Usuario;
+
+  @ManyToOne(() => Mascota)
+  @JoinColumn({ name: "mascota_id" })
+  mascota!: Mascota;
+
+  @ManyToOne(() => Servicio)
+  @JoinColumn({ name: "servicio_id" })
+  servicio!: Servicio;
+
+  @ManyToOne(() => Veterinario)
+  @JoinColumn({ name: "veterinario_id" })
+  veterinario!: Veterinario;
 }

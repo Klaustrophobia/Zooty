@@ -3,29 +3,30 @@ import { Veterinario } from "@/entities/Veterinario";
 import { VeterinarioDTO } from "@/dtos/veterinario.dto";
 
 export class VeterinarioService {
-private formatVeterinario(v: Veterinario, userLat?: number, userLng?: number) {
+  private formatVeterinario(
+    v: Veterinario,
+    userLat?: number,
+    userLng?: number,
+  ) {
+    const lat = v.latitud != null ? Number(v.latitud) : null;
+    const lng = v.longitud != null ? Number(v.longitud) : null;
 
-  const lat = v.latitud != null ? Number(v.latitud) : null;
-  const lng = v.longitud != null ? Number(v.longitud) : null;
+    const distance =
+      userLat != null && userLng != null && lat != null && lng != null
+        ? this.calcularDistanciaKm(userLat, userLng, lat, lng)
+        : null;
 
-  const distance =
-    userLat != null &&
-    userLng != null &&
-    lat != null &&
-    lng != null
-      ? this.calcularDistanciaKm(userLat, userLng, lat, lng)
-      : null;
-
-  return {
-    id: v.id,
-    nombre_negocio: v.nombre_negocio,
-    promedio_calificacion: Number(v.promedio_calificacion), // 🔥 también esto
-    specialty: v.especialidades?.map(e => e.nombre).join(", ") || "",
-    latitud: lat,
-    longitud: lng,
-    distance: distance ? `${distance.toFixed(1)} km` : null
-  };
-}
+    return {
+      id: v.id,
+      nombre_negocio: v.nombre_negocio,
+      promedio_calificacion: Number(v.promedio_calificacion),
+      specialty: v.especialidades?.map((e) => e.nombre).join(", ") || "",
+      latitud: lat,
+      longitud: lng,
+      distance:
+        typeof distance === "number" ? `${distance.toFixed(1)} km` : null,
+    };
+  }
 
   private calcularDistanciaKm(
     lat1: number,
@@ -76,17 +77,18 @@ private formatVeterinario(v: Veterinario, userLat?: number, userLng?: number) {
     });
   }
 
-async getAllVeterinarios(userLat?: number, userLng?: number) {
-  const DEFAULT_LAT = 14.0723;
-  const DEFAULT_LNG = -87.1921;
+  async getAllVeterinarios(userLat?: number, userLng?: number) {
+    const DEFAULT_LAT = 14.1077;
+    const DEFAULT_LNG = -87.2419;
 
-  const lat = userLat ?? DEFAULT_LAT;
-  const lng = userLng ?? DEFAULT_LNG;
+    const lat = userLat ?? DEFAULT_LAT;
+    const lng = userLng ?? DEFAULT_LNG;
+    console.log("USER LAT LNG:", userLat, userLng);
+    console.log("VET LAT LNG:", lat, lng);
+    const vets = await this.veterinarioRepository.findAll();
 
-  const vets = await this.veterinarioRepository.findAll();
-
-  return vets.map(v => this.formatVeterinario(v, lat, lng));
-}
+    return vets.map((v) => this.formatVeterinario(v, lat, lng));
+  }
 
   async getVeterinarioById(id: string): Promise<VeterinarioDTO | null> {
     const vet = await this.veterinarioRepository.findById(id);
@@ -102,10 +104,18 @@ async getAllVeterinarios(userLat?: number, userLng?: number) {
     };
   }
 
-async getVeterinariosCercanos(lat: number, lng: number, radioKm = 10) {
-  const vets = await this.veterinarioRepository.findCercanos(lat, lng, radioKm);
-  return vets.map(v => this.formatVeterinario(v, lat, lng));
-}
+  async getVeterinariosCercanos(lat: number, lng: number, radioKm = 10) {
+    console.log("USER LAT LNG:", lat, lng);
+    const vets = await this.veterinarioRepository.findCercanos(
+      lat,
+      lng,
+      radioKm,
+    );
+    return vets.map((v) => {
+      console.log("VET:", v.latitud, v.longitud);
+      return this.formatVeterinario(v, lat, lng);
+    });
+  }
 
   async updateVeterinario(
     id: string,

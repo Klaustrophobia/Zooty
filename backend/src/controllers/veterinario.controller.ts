@@ -22,7 +22,7 @@ export class VeterinarioController {
         lat,
         lng,
       );
-
+      console.log(lat, lng);
       return NextResponse.json(veterinarios);
     } catch (error) {
       console.error(error);

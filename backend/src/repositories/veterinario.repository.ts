@@ -52,6 +52,7 @@ async findAll(): Promise<Veterinario[]> {
     
     return await this.repository
       .createQueryBuilder("veterinario")
+      .leftJoinAndSelect("veterinario.especialidades", "especialidad")
       .where("veterinario.latitud BETWEEN :minLat AND :maxLat", {
         minLat: latitud - gradoLatitud,
         maxLat: latitud + gradoLatitud

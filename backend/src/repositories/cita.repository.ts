@@ -20,16 +20,16 @@ export class CitaRepository {
   }
 
   async findAll(): Promise<Cita[]> {
-    await this.initialize();
     return await this.repository.find({
-      order: { fecha_cita: "DESC" }
+      relations: ["usuario", "mascota", "servicio", "veterinario"],
+      order: { fecha_cita: "DESC" },
     });
   }
 
   async findById(id: string): Promise<Cita | null> {
     await this.initialize();
     return await this.repository.findOne({
-      where: { id }
+      where: { id },
     });
   }
 
@@ -37,7 +37,7 @@ export class CitaRepository {
     await this.initialize();
     return await this.repository.find({
       where: { usuario_id: usuarioId },
-      order: { fecha_cita: "DESC" }
+      order: { fecha_cita: "DESC" },
     });
   }
 
@@ -45,7 +45,7 @@ export class CitaRepository {
     await this.initialize();
     return await this.repository.find({
       where: { veterinario_id: veterinarioId },
-      order: { fecha_cita: "DESC" }
+      order: { fecha_cita: "DESC" },
     });
   }
 
@@ -53,7 +53,7 @@ export class CitaRepository {
     await this.initialize();
     return await this.repository.find({
       where: { mascota_id: mascotaId },
-      order: { fecha_cita: "DESC" }
+      order: { fecha_cita: "DESC" },
     });
   }
 
@@ -61,9 +61,9 @@ export class CitaRepository {
     await this.initialize();
     return await this.repository.find({
       where: {
-        fecha_cita: Between(inicio, fin)
+        fecha_cita: Between(inicio, fin),
       },
-      order: { fecha_cita: "ASC" }
+      order: { fecha_cita: "ASC" },
     });
   }
 
@@ -72,9 +72,9 @@ export class CitaRepository {
     return await this.repository.find({
       where: {
         fecha_cita: MoreThanOrEqual(fecha),
-        estado: "pendiente"
+        estado: "pendiente",
       },
-      order: { fecha_cita: "ASC" }
+      order: { fecha_cita: "ASC" },
     });
   }
 
@@ -89,21 +89,24 @@ export class CitaRepository {
     return result.affected !== 0;
   }
 
-  async verificarDisponibilidad(veterinarioId: string, fechaCita: Date): Promise<boolean> {
+  async verificarDisponibilidad(
+    veterinarioId: string,
+    fechaCita: Date,
+  ): Promise<boolean> {
     await this.initialize();
     const inicio = new Date(fechaCita);
     inicio.setMinutes(inicio.getMinutes() - 30);
     const fin = new Date(fechaCita);
     fin.setMinutes(fin.getMinutes() + 30);
-    
+
     const citaExistente = await this.repository.findOne({
       where: {
         veterinario_id: veterinarioId,
         fecha_cita: Between(inicio, fin),
-        estado: "pendiente"
-      }
+        estado: "pendiente",
+      },
     });
-    
+
     return !citaExistente;
   }
 }
