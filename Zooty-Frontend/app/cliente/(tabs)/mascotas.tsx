@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, SafeAreaView, Modal,
@@ -6,23 +6,30 @@ import {
   TouchableWithoutFeedback, Keyboard,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors, Spacing, Radius, FontSize } from '@/constants/theme';
 import { wp, hp } from '@/constants/Responsive';
 import { Dimensions } from 'react-native';
+
 const { width, height } = Dimensions.get('window');
 
-const PETS = [
-  { id: '1', name: 'Luna',  species: 'Perro',  breed: 'Labrador Retriever', age: '3 años',  weight: '28 kg', color: '#E8F7F5', nextVaccine: '15 Nov 2024', lastVisit: '2 Sep 2024' },
-  { id: '2', name: 'Max',   species: 'Gato',   breed: 'Persa',              age: '5 años',  weight: '4.2 kg', color: '#FFF4EE', nextVaccine: '3 Dic 2024',  lastVisit: '1 Oct 2024' },
-  { id: '3', name: 'Rocky', species: 'Perro',  breed: 'Golden Retriever',   age: '2 años',  weight: '31 kg', color: '#E8F7F5', nextVaccine: '20 Ene 2025', lastVisit: '28 Ago 2024' },
+const STORAGE_KEY = 'mascotas_pets';
+
+const INITIAL_PETS = [
+  { id: '1', name: 'Luna',  species: 'Perro', breed: 'Labrador Retriever', age: '3 años',  weight: '28 kg',  color: '#E8F7F5', nextVaccine: '15 Nov 2024', lastVisit: '2 Sep 2024' },
+  { id: '2', name: 'Max',   species: 'Gato',  breed: 'Persa',              age: '5 años',  weight: '4.2 kg', color: '#FFF4EE', nextVaccine: '3 Dic 2024',  lastVisit: '1 Oct 2024' },
+  { id: '3', name: 'Rocky', species: 'Perro', breed: 'Golden Retriever',   age: '2 años',  weight: '31 kg',  color: '#E8F7F5', nextVaccine: '20 Ene 2025', lastVisit: '28 Ago 2024' },
 ];
 
+type Pet = typeof INITIAL_PETS[0];
+
 interface PetDetailProps {
-  pet: typeof PETS[0];
+  pet: Pet;
   onClose: () => void;
+  onEdit: (pet: Pet) => void;
 }
 
-function PetDetail({ pet, onClose }: PetDetailProps) {
+function PetDetail({ pet, onClose, onEdit }: PetDetailProps) {
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <SafeAreaView style={dStyles.safe}>
@@ -31,12 +38,16 @@ function PetDetail({ pet, onClose }: PetDetailProps) {
             <Ionicons name="chevron-back" size={wp(24)} color={Colors.primary} />
           </TouchableOpacity>
           <Text style={dStyles.headerTitle}>{pet.name}</Text>
-          <TouchableOpacity style={dStyles.editBtn}>
+          <TouchableOpacity style={dStyles.editBtn} onPress={() => onEdit(pet)}>
             <Text style={dStyles.editText}>Editar</Text>
           </TouchableOpacity>
         </View>
 
-        <ScrollView contentContainerStyle={dStyles.scroll} showsVerticalScrollIndicator={false}>
+        <ScrollView 
+          contentContainerStyle={dStyles.scroll} 
+          showsVerticalScrollIndicator={true}
+          bounces={false}
+        >
           <View style={[dStyles.hero, { backgroundColor: pet.color }]}>
             <MaterialCommunityIcons name="paw" size={wp(72)} color={Colors.primary} />
             <Text style={dStyles.heroName}>{pet.name}</Text>
@@ -44,16 +55,18 @@ function PetDetail({ pet, onClose }: PetDetailProps) {
           </View>
 
           <View style={dStyles.statsRow}>
-            {[
-              { label: 'Especie', value: pet.species },
-              { label: 'Edad',    value: pet.age },
-              { label: 'Peso',    value: pet.weight },
-            ].map(({ label, value }) => (
-              <View key={label} style={dStyles.statCard}>
-                <Text style={dStyles.statValue}>{value}</Text>
-                <Text style={dStyles.statLabel}>{label}</Text>
-              </View>
-            ))}
+            <View style={dStyles.statCard}>
+              <Text style={dStyles.statValue}>{pet.species}</Text>
+              <Text style={dStyles.statLabel}>Especie</Text>
+            </View>
+            <View style={dStyles.statCard}>
+              <Text style={dStyles.statValue}>{pet.age}</Text>
+              <Text style={dStyles.statLabel}>Edad</Text>
+            </View>
+            <View style={dStyles.statCard}>
+              <Text style={dStyles.statValue}>{pet.weight}</Text>
+              <Text style={dStyles.statLabel}>Peso</Text>
+            </View>
           </View>
 
           <View style={dStyles.section}>
@@ -81,12 +94,12 @@ function PetDetail({ pet, onClose }: PetDetailProps) {
   );
 }
 
-// Modal para agregar nueva mascota - IDÉNTICO AL DE HOME
-function AddPetModal({ visible, onClose, onAddPet }: { visible: boolean; onClose: () => void; onAddPet: (pet: any) => void }) {
+function AddPetModal({ visible, onClose, onAddPet }: { visible: boolean; onClose: () => void; onAddPet: (pet: Pet) => void }) {
   const [newPetName, setNewPetName] = useState('');
   const [newPetType, setNewPetType] = useState('Perro');
   const [newPetAge, setNewPetAge] = useState('');
   const [newPetBreed, setNewPetBreed] = useState('');
+  const [newPetWeight, setNewPetWeight] = useState('');
 
   const handleAddPet = () => {
     if (!newPetName.trim()) {
@@ -94,13 +107,13 @@ function AddPetModal({ visible, onClose, onAddPet }: { visible: boolean; onClose
       return;
     }
 
-    const newPet = {
+    const newPet: Pet = {
       id: Date.now().toString(),
       name: newPetName,
       species: newPetType,
       breed: newPetBreed || 'No especificada',
       age: newPetAge || 'No especificada',
-      weight: 'No especificado',
+      weight: newPetWeight || 'No especificado',
       color: newPetType === 'Perro' ? '#E8F7F5' : '#FFF4EE',
       nextVaccine: 'Por definir',
       lastVisit: 'Sin visitas',
@@ -111,39 +124,26 @@ function AddPetModal({ visible, onClose, onAddPet }: { visible: boolean; onClose
     setNewPetType('Perro');
     setNewPetAge('');
     setNewPetBreed('');
+    setNewPetWeight('');
     onClose();
     Alert.alert('Éxito', `${newPetName} ha sido agregado a tus mascotas`);
   };
 
   return (
-    <Modal
-      animationType="fade"
-      transparent={true}
-      visible={visible}
-      onRequestClose={onClose}
-    >
+    <Modal animationType="fade" transparent visible={visible} onRequestClose={onClose}>
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={modalStyles.modalOverlay}>
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <KeyboardAvoidingView 
-              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-              style={modalStyles.modalContainer}
-            >
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={modalStyles.modalContainer}>
               <View style={modalStyles.modalContent}>
                 <View style={modalStyles.modalHeader}>
                   <Text style={modalStyles.modalTitle}>Nueva mascota</Text>
-                  <TouchableOpacity 
-                    onPress={onClose}
-                    style={modalStyles.modalCloseBtn}
-                  >
-                    <Text style={modalStyles.modalClose}>✕</Text>
+                  <TouchableOpacity onPress={onClose} style={modalStyles.modalCloseBtn}>
+                    <Ionicons name="close" size={wp(20)} color={Colors.textMedium} />
                   </TouchableOpacity>
                 </View>
 
-                <ScrollView 
-                  showsVerticalScrollIndicator={false}
-                  contentContainerStyle={modalStyles.modalScroll}
-                >
+                <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={modalStyles.modalScroll}>
                   <View style={modalStyles.modalBody}>
                     <View style={modalStyles.inputGroup}>
                       <Text style={modalStyles.inputLabel}>Nombre *</Text>
@@ -153,7 +153,7 @@ function AddPetModal({ visible, onClose, onAddPet }: { visible: boolean; onClose
                         placeholderTextColor={Colors.placeholder}
                         value={newPetName}
                         onChangeText={setNewPetName}
-                        autoFocus={true}
+                        autoFocus
                       />
                     </View>
 
@@ -163,16 +163,10 @@ function AddPetModal({ visible, onClose, onAddPet }: { visible: boolean; onClose
                         {['Perro', 'Gato', 'Otro'].map((type) => (
                           <TouchableOpacity
                             key={type}
-                            style={[
-                              modalStyles.typeButton,
-                              newPetType === type && modalStyles.typeButtonActive
-                            ]}
+                            style={[modalStyles.typeButton, newPetType === type && modalStyles.typeButtonActive]}
                             onPress={() => setNewPetType(type)}
                           >
-                            <Text style={[
-                              modalStyles.typeButtonText,
-                              newPetType === type && modalStyles.typeButtonTextActive
-                            ]}>
+                            <Text style={[modalStyles.typeButtonText, newPetType === type && modalStyles.typeButtonTextActive]}>
                               {type}
                             </Text>
                           </TouchableOpacity>
@@ -181,7 +175,7 @@ function AddPetModal({ visible, onClose, onAddPet }: { visible: boolean; onClose
                     </View>
 
                     <View style={modalStyles.inputGroup}>
-                      <Text style={modalStyles.inputLabel}>Raza (opcional)</Text>
+                      <Text style={modalStyles.inputLabel}>Raza</Text>
                       <TextInput
                         style={modalStyles.input}
                         placeholder="Ej: Labrador, Persa"
@@ -192,7 +186,7 @@ function AddPetModal({ visible, onClose, onAddPet }: { visible: boolean; onClose
                     </View>
 
                     <View style={modalStyles.inputGroup}>
-                      <Text style={modalStyles.inputLabel}>Edad (opcional)</Text>
+                      <Text style={modalStyles.inputLabel}>Edad</Text>
                       <TextInput
                         style={modalStyles.input}
                         placeholder="Ej: 2 años, 3 meses"
@@ -201,20 +195,135 @@ function AddPetModal({ visible, onClose, onAddPet }: { visible: boolean; onClose
                         onChangeText={setNewPetAge}
                       />
                     </View>
+
+                    <View style={modalStyles.inputGroup}>
+                      <Text style={modalStyles.inputLabel}>Peso</Text>
+                      <TextInput
+                        style={modalStyles.input}
+                        placeholder="Ej: 28 kg, 4.2 kg"
+                        placeholderTextColor={Colors.placeholder}
+                        value={newPetWeight}
+                        onChangeText={setNewPetWeight}
+                      />
+                    </View>
                   </View>
                 </ScrollView>
 
                 <View style={modalStyles.modalFooter}>
-                  <TouchableOpacity 
-                    style={modalStyles.modalButtonCancel}
-                    onPress={onClose}
-                  >
+                  <TouchableOpacity style={modalStyles.modalButtonCancel} onPress={onClose}>
                     <Text style={modalStyles.modalButtonCancelText}>Cancelar</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={modalStyles.modalButtonSave}
-                    onPress={handleAddPet}
-                  >
+                  <TouchableOpacity style={modalStyles.modalButtonSave} onPress={handleAddPet}>
+                    <Text style={modalStyles.modalButtonSaveText}>Guardar</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </KeyboardAvoidingView>
+          </TouchableWithoutFeedback>
+        </View>
+      </TouchableWithoutFeedback>
+    </Modal>
+  );
+}
+
+function EditPetModal({ visible, pet, onClose, onSave }: { visible: boolean; pet: Pet | null; onClose: () => void; onSave: (pet: Pet) => void }) {
+  const [name, setName] = useState('');
+  const [breed, setBreed] = useState('');
+  const [age, setAge] = useState('');
+  const [weight, setWeight] = useState('');
+
+  useEffect(() => {
+    if (pet) {
+      setName(pet.name);
+      setBreed(pet.breed);
+      setAge(pet.age);
+      setWeight(pet.weight);
+    }
+  }, [pet]);
+
+  const handleSave = () => {
+    if (!name.trim()) {
+      Alert.alert('Error', 'El nombre de la mascota es requerido');
+      return;
+    }
+
+    onSave({
+      ...pet!,
+      name,
+      breed: breed || 'No especificada',
+      age: age || 'No especificada',
+      weight: weight || 'No especificado',
+    });
+    onClose();
+  };
+
+  return (
+    <Modal animationType="fade" transparent visible={visible} onRequestClose={onClose}>
+      <TouchableWithoutFeedback onPress={onClose}>
+        <View style={modalStyles.modalOverlay}>
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={modalStyles.modalContainer}>
+              <View style={modalStyles.modalContent}>
+                <View style={modalStyles.modalHeader}>
+                  <Text style={modalStyles.modalTitle}>Editar mascota</Text>
+                  <TouchableOpacity onPress={onClose} style={modalStyles.modalCloseBtn}>
+                    <Ionicons name="close" size={wp(20)} color={Colors.textMedium} />
+                  </TouchableOpacity>
+                </View>
+
+                <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={modalStyles.modalScroll}>
+                  <View style={modalStyles.modalBody}>
+                    <View style={modalStyles.inputGroup}>
+                      <Text style={modalStyles.inputLabel}>Nombre *</Text>
+                      <TextInput
+                        style={modalStyles.input}
+                        placeholder="Ej: Luna, Max, Rocky"
+                        placeholderTextColor={Colors.placeholder}
+                        value={name}
+                        onChangeText={setName}
+                      />
+                    </View>
+
+                    <View style={modalStyles.inputGroup}>
+                      <Text style={modalStyles.inputLabel}>Raza</Text>
+                      <TextInput
+                        style={modalStyles.input}
+                        placeholder="Ej: Labrador, Persa"
+                        placeholderTextColor={Colors.placeholder}
+                        value={breed}
+                        onChangeText={setBreed}
+                      />
+                    </View>
+
+                    <View style={modalStyles.inputGroup}>
+                      <Text style={modalStyles.inputLabel}>Edad</Text>
+                      <TextInput
+                        style={modalStyles.input}
+                        placeholder="Ej: 2 años, 3 meses"
+                        placeholderTextColor={Colors.placeholder}
+                        value={age}
+                        onChangeText={setAge}
+                      />
+                    </View>
+
+                    <View style={modalStyles.inputGroup}>
+                      <Text style={modalStyles.inputLabel}>Peso</Text>
+                      <TextInput
+                        style={modalStyles.input}
+                        placeholder="Ej: 28 kg, 4.2 kg"
+                        placeholderTextColor={Colors.placeholder}
+                        value={weight}
+                        onChangeText={setWeight}
+                      />
+                    </View>
+                  </View>
+                </ScrollView>
+
+                <View style={modalStyles.modalFooter}>
+                  <TouchableOpacity style={modalStyles.modalButtonCancel} onPress={onClose}>
+                    <Text style={modalStyles.modalButtonCancelText}>Cancelar</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={modalStyles.modalButtonSave} onPress={handleSave}>
                     <Text style={modalStyles.modalButtonSaveText}>Guardar</Text>
                   </TouchableOpacity>
                 </View>
@@ -228,24 +337,67 @@ function AddPetModal({ visible, onClose, onAddPet }: { visible: boolean; onClose
 }
 
 export default function MascotasScreen() {
-  const [selected, setSelected] = useState<typeof PETS[0] | null>(null);
-  const [pets, setPets] = useState(PETS);
-  const [modalVisible, setModalVisible] = useState(false);
+  const [selected, setSelected] = useState<Pet | null>(null);
+  const [pets, setPets] = useState<Pet[]>(INITIAL_PETS);
+  const [addModalVisible, setAddModalVisible] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [petToEdit, setPetToEdit] = useState<Pet | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
 
-  const handleAddPet = (newPet: any) => {
-    setPets([...pets, newPet]);
+  useEffect(() => {
+    const loadPets = async () => {
+      try {
+        const saved = await AsyncStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          setPets(JSON.parse(saved));
+        }
+      } catch (e) {
+        console.error('Error cargando mascotas:', e);
+      } finally {
+        setIsLoaded(true);
+      }
+    };
+    loadPets();
+  }, []);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+    const savePets = async () => {
+      try {
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(pets));
+      } catch (e) {
+        console.error('Error guardando mascotas:', e);
+      }
+    };
+    savePets();
+  }, [pets, isLoaded]);
+
+  const handleAddPet = (newPet: Pet) => {
+    setPets(prev => [...prev, newPet]);
+  };
+
+  const handleEditPress = (pet: Pet) => {
+    setPetToEdit(pet);
+    setSelected(null);
+    setEditModalVisible(true);
+  };
+
+  const handleSaveEdit = (updatedPet: Pet) => {
+    setPets(prev => prev.map(p => p.id === updatedPet.id ? updatedPet : p));
+    setSelected(updatedPet);
+    setPetToEdit(null);
   };
 
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
         <Text style={styles.pageTitle}>Mis Mascotas</Text>
-        <TouchableOpacity style={styles.addBtn} onPress={() => setModalVisible(true)}>
+        <TouchableOpacity style={styles.addBtn} onPress={() => setAddModalVisible(true)}>
           <Ionicons name="add" size={wp(24)} color={Colors.white} />
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+      <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={styles.scroll}>
         {pets.map((pet) => (
           <TouchableOpacity
             key={pet.id}
@@ -275,21 +427,39 @@ export default function MascotasScreen() {
           </TouchableOpacity>
         ))}
 
-        <TouchableOpacity style={styles.addCard} onPress={() => setModalVisible(true)}>
+        <TouchableOpacity style={styles.addCard} onPress={() => setAddModalVisible(true)}>
           <View style={styles.addCardIcon}>
             <Ionicons name="add" size={wp(28)} color={Colors.primary} />
           </View>
           <Text style={styles.addCardTitle}>Añadir mascota</Text>
           <Text style={styles.addCardSub}>Registra a tu compañero peludo</Text>
         </TouchableOpacity>
+        
+        <View style={{ height: hp(20) }} />
       </ScrollView>
 
-      {selected && <PetDetail pet={selected} onClose={() => setSelected(null)} />}
-      
-      <AddPetModal 
-        visible={modalVisible} 
-        onClose={() => setModalVisible(false)} 
+      {selected && (
+        <PetDetail
+          pet={selected}
+          onClose={() => setSelected(null)}
+          onEdit={handleEditPress}
+        />
+      )}
+
+      <AddPetModal
+        visible={addModalVisible}
+        onClose={() => setAddModalVisible(false)}
         onAddPet={handleAddPet}
+      />
+
+      <EditPetModal
+        visible={editModalVisible}
+        pet={petToEdit}
+        onClose={() => {
+          setEditModalVisible(false);
+          setPetToEdit(null);
+        }}
+        onSave={handleSaveEdit}
       />
     </SafeAreaView>
   );
@@ -308,7 +478,7 @@ const styles = StyleSheet.create({
     shadowColor: Colors.primary, shadowOpacity: 0.3, shadowRadius: wp(8),
     shadowOffset: { width: 0, height: hp(3) }, elevation: 4,
   },
-  scroll:     { paddingHorizontal: Spacing.lg, paddingTop: Spacing.md },
+  scroll:     { paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, paddingBottom: hp(20) },
   petCard: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: Colors.white, borderRadius: Radius.lg,
@@ -362,7 +532,7 @@ const dStyles = StyleSheet.create({
   headerTitle: { fontSize: FontSize.xl, fontWeight: '700', color: Colors.textDark },
   editBtn:     { paddingHorizontal: Spacing.sm },
   editText:    { color: Colors.primary, fontSize: FontSize.sm, fontWeight: '600' },
-  scroll:      { paddingBottom: Spacing.xxl },
+  scroll:      { paddingBottom: hp(40) },
   hero: {
     alignItems: 'center', paddingVertical: hp(40),
     marginBottom: Spacing.lg,
@@ -391,6 +561,7 @@ const dStyles = StyleSheet.create({
   ctaBtn: {
     marginHorizontal: Spacing.lg, height: hp(54), backgroundColor: Colors.primary,
     borderRadius: Radius.full, alignItems: 'center', justifyContent: 'center',
+    marginBottom: hp(20),
   },
   ctaText: { color: Colors.white, fontSize: FontSize.lg, fontWeight: '600' },
 });
@@ -435,13 +606,9 @@ const modalStyles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: Colors.background,
   },
-  modalClose: {
-    fontSize: wp(18),
-    color: Colors.textMedium,
-    fontWeight: '400',
-  },
   modalScroll: {
     flexGrow: 1,
+    paddingBottom: Spacing.md,
   },
   modalBody: {
     padding: Spacing.lg,
